@@ -1,5 +1,7 @@
 package com.bakoproductions.fossilsviewer.geometry;
 
+import java.util.ArrayList;
+
 /**
  * @author Michael Bakogiannis
  *
@@ -10,37 +12,37 @@ package com.bakoproductions.fossilsviewer.geometry;
  */
 
 public class Face {
-	private Point3D[] vertexes;
-	private Point2D[] textures;
-	private Point3D[] normals;
+	private ArrayList<Point3D> vertices;
+	private ArrayList<Point2D> textures;
+	private ArrayList<Point3D> normals;
 	
 	public Face(){
-		setVertexes(new Point3D[3]);
-		setTextures(new Point2D[3]);
-		setNormals(new Point3D[3]);
+		vertices = new ArrayList<Point3D>();
+		textures = new ArrayList<Point2D>();
+		normals = new ArrayList<Point3D>();
 	}
 
-	public Point3D[] getVertexes() {
-		return vertexes;
+	public ArrayList<Point3D> getVertices() {
+		return vertices;
 	}
 
-	public void setVertexes(Point3D[] vertexes) {
-		this.vertexes = vertexes;
+	public void setVertices(ArrayList<Point3D> vertexes) {
+		this.vertices = vertexes;
 	}
 
-	public Point2D[] getTextures() {
+	public ArrayList<Point2D> getTextures() {
 		return textures;
 	}
 
-	public void setTextures(Point2D[] textures) {
+	public void setTextures(ArrayList<Point2D> textures) {
 		this.textures = textures;
 	}
 
-	public Point3D[] getNormals() {
+	public ArrayList<Point3D> getNormals() {
 		return normals;
 	}
 
-	public void setNormals(Point3D[] normals) {
+	public void setNormals(ArrayList<Point3D> normals) {
 		this.normals = normals;
 	}
 }
