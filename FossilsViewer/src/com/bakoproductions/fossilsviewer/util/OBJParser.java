@@ -9,10 +9,10 @@ import java.util.ArrayList;
 import android.content.Context;
 import android.content.res.Resources;
 
-import com.bakoprocutions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.geometry.Face;
 import com.bakoproductions.fossilsviewer.geometry.Point2D;
 import com.bakoproductions.fossilsviewer.geometry.Point3D;
+import com.bakoproductions.fossilsviewer.objects.Model;
 
 public class OBJParser implements Parser {
 	private Context context;

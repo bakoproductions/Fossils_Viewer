@@ -1,6 +1,6 @@
 package com.bakoproductions.fossilsviewer.util;
 
-import com.bakoprocutions.fossilsviewer.objects.Model;
+import com.bakoproductions.fossilsviewer.objects.Model;
 
 public interface Parser {
 	public static final int NO_ERROR = 0; 
