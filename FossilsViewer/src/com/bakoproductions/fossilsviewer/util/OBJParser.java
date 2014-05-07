@@ -1,95 +1,203 @@
 package com.bakoproductions.fossilsviewer.util;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
+import java.util.Vector;
 
-import android.content.Context;
 import android.content.res.Resources;
 
-import com.bakoproductions.fossilsviewer.geometry.Face;
-import com.bakoproductions.fossilsviewer.geometry.Point2D;
-import com.bakoproductions.fossilsviewer.geometry.Point3D;
+import com.bakoproductions.fossilsviewer.objects.Material;
 import com.bakoproductions.fossilsviewer.objects.Model;
+import com.bakoproductions.fossilsviewer.objects.ModelPart;
 
 public class OBJParser implements Parser {
-	private Context context;
-	private int objResource;
-	private int mtlResource;
+	private String objFile;
 	
-	public OBJParser(Context context, int objResource, int mtlResource){
-		this.context = context;
-		this.objResource = objResource;
-		this.mtlResource = mtlResource;
+	public OBJParser(String objFile){
+		this.objFile = objFile;
 	}
 	
 	@Override
 	public int parse(Model model) {
-		InputStream inputStream = context.getResources().openRawResource(objResource);
-		BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+		Vector<Float> vertices = new Vector<Float>();
+		Vector<Float> normals = new Vector<Float>();
+		Vector<Float> textures = new Vector<Float>();
+		Vector<Short> faces = new Vector<Short>();
 		
-		ArrayList<Point3D> verticies = new ArrayList<Point3D>();
-		ArrayList<Point3D> normals = new ArrayList<Point3D>();
-		ArrayList<Point2D> textures = new ArrayList<Point2D>();
-		ArrayList<Face> faces = new ArrayList<Face>();
+		Vector<Short> texturePointers=new Vector<Short>();
+		Vector<Short> normalPointers=new Vector<Short>();
+		
+		Vector<ModelPart> parts= new Vector<ModelPart>();
+		Vector<Material> materials;
+		
 		
 		try {
+			FileInputStream inputStream = new FileInputStream(objFile);
+			BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+			
 			String line;
 			while((line = br.readLine()) != null){
-				if(line.startsWith("v ")){
-					String[] vertexStr = line.split("\\s+", 3);
-					
-					Point3D point = new Point3D(
-							Float.parseFloat(vertexStr[0]),
-							Float.parseFloat(vertexStr[1]),
-							Float.parseFloat(vertexStr[2]));
-					
-					verticies.add(point);
-				}else if(line.startsWith("vn ")){
-					String[] normalStr = line.split("\\s+", 3);
-					
-					Point3D point = new Point3D(
-							Float.parseFloat(normalStr[0]),
-							Float.parseFloat(normalStr[1]),
-							Float.parseFloat(normalStr[2]));
-					
-					normals.add(point);
-				}else if(line.startsWith("vt ")){
-					String[] textureStr = line.split("\\s+", 3);
-					
-					Point2D point = new Point2D(
-							Float.parseFloat(textureStr[0]),
-							Float.parseFloat(textureStr[1]));
-					
-					textures.add(point);
-				}else if(line.startsWith("f ")){
-					String[] vertexesStr = line.split("\\s+", 3);
-		
-					Face face = new Face();
-					
-					for(int i=0; i<3; i++){
-						String[] vertexStr = vertexesStr[i].split("\\s+", 3);
-						
-						int vertexPos = Integer.parseInt(vertexStr[0]);
-						face.getVertices().add(verticies.get(vertexPos - 1));
-						
-						int texturePos = Integer.parseInt(vertexStr[1]);
-						face.getTextures().add(textures.get(texturePos - 1));
-						
-						int normalPos = Integer.parseInt(vertexStr[2]);
-						face.getNormals().add(normals.get(normalPos - 1));
+				if(line.startsWith("v")){
+					String[] splitted = line.split("[ ]+");
+ 
+					for(int i=1; i<splitted.length; i++){
+						vertices.add(Float.valueOf(splitted[i]));
 					}
-					
-					faces.add(face);
-				}
+				}else if(line.startsWith("vn")){
+					String[] splitted = line.split("[ ]+"); 
+		 
+					for(int i=1; i<splitted.length; i++){ 
+						normals.add(Float.valueOf(splitted[i]));
+					}
+				}else if(line.startsWith("vt")){
+					String[] splitted = line.split("[ ]+"); 
+					 
+					for(int i=1; i<splitted.length; i++){
+						textures.add(Float.valueOf(splitted[i]));
+					}
+				}else if(line.startsWith("f")){
+					String[] splitted = line.split("[ ]+");
+					if(splitted[1].matches("[0-9]+")){
+						// f v v v ...
+						if(splitted.length == 4){
+							for(int i=1; i<splitted.length; i++){
+								Short s = Short.valueOf(splitted[i]);
+								s--;
+								faces.add(s);
+							}
+						}else{
+							Vector<Short> polygon = new Vector<Short>();
+							for(int i=1; i<splitted.length; i++){
+								Short s = Short.valueOf(splitted[i]);
+								s--;
+								polygon.add(s);
+							}
+							faces.addAll(Triangulator.triangulate(polygon));
+						}
+						
+					}else if(splitted[1].matches("[0-9]+/[0-9]+")){
+						// f v/vt ...
+						if(splitted.length == 4){
+							for(int i=1; i<splitted.length; i++){
+								// The first value designates a face
+								Short s = Short.valueOf(splitted[i].split("/")[0]);
+								s--;
+								faces.add(s);
+								
+								// The second value designates a texture
+								s = Short.valueOf(splitted[i].split("/")[1]);
+								s--;
+								texturePointers.add(s);
+							}
+						}else{
+							Vector<Short> tmpFaces = new Vector<Short>();
+							Vector<Short> tmpTextures = new Vector<Short>();
+							for(int i=1; i<splitted.length; i++){
+								Short s = Short.valueOf(splitted[i].split("/")[0]);
+								s--;
+								tmpFaces.add(s);
+								
+								s = Short.valueOf(splitted[i].split("/")[1]);
+								s--;
+								tmpTextures.add(s);
+							}
+							faces.addAll(Triangulator.triangulate(tmpFaces));
+							texturePointers.addAll(Triangulator.triangulate(tmpTextures));
+						}
+					}else if(splitted[1].matches("[0-9]+//[0-9]+")){
+						//f v//vn ...
+						if(splitted.length == 4){
+							for(int i=1; i<splitted.length; i++){
+								Short s = Short.valueOf(splitted[i].split("//")[0]);
+								s--;
+								faces.add(s);
+								
+								s=Short.valueOf(splitted[i].split("//")[1]);
+								s--;
+								normalPointers.add(s);
+							}
+						}else{
+							Vector<Short> tmpFaces = new Vector<Short>();
+							Vector<Short> tmpNormals = new Vector<Short>();
+							for(int i=1; i<splitted.length; i++){
+								Short s = Short.valueOf(splitted[i].split("//")[0]);
+								s--;
+								tmpFaces.add(s);
+								
+								s = Short.valueOf(splitted[i].split("//")[1]);
+								s--;
+								tmpNormals.add(s);
+							}
+							faces.addAll(Triangulator.triangulate(tmpFaces));
+							normalPointers.addAll(Triangulator.triangulate(tmpNormals));
+						}
+					}else if(splitted[1].matches("[0-9]+/[0-9]+/[0-9]+")){
+						//f v/vt/vn ...
+						if(splitted.length == 4){
+							for(int i=1; i<splitted.length; i++){
+								Short s=Short.valueOf(splitted[i].split("/")[0]);
+								s--;
+								faces.add(s);
+								
+								s=Short.valueOf(splitted[i].split("/")[1]);
+								s--;
+								texturePointers.add(s);
+								
+								s=Short.valueOf(splitted[i].split("/")[2]);
+								s--;
+								normalPointers.add(s);
+							}
+						}else{
+							Vector<Short> tmpFaces = new Vector<Short>();
+							Vector<Short> tmpNormals = new Vector<Short>();
+							Vector<Short> tmpTextures = new Vector<Short>();
+							for(int i=1; i<splitted.length; i++){
+								Short s = Short.valueOf(splitted[i].split("/")[0]);
+								s--;
+								tmpFaces.add(s);
+								
+								s = Short.valueOf(splitted[i].split("/")[1]);
+								s--;
+								tmpTextures.add(s);
+								
+								s=Short.valueOf(splitted[i].split("/")[2]);
+								s--;
+								tmpTextures.add(s);
+							}
+							faces.addAll(Triangulator.triangulate(tmpFaces));
+							texturePointers.addAll(Triangulator.triangulate(tmpTextures));
+							normalPointers.addAll(Triangulator.triangulate(tmpNormals));
+						}
+						continue;
+					}
+				} 
 			}
 		} catch (IOException e) {
 			return IO_ERROR;
 		} catch (Resources.NotFoundException nfe) {
 			return RESOURCE_NOT_FOUND_ERROR;
 		}
+		
+		if(faces.size() != 0){
+			ModelPart modelPart = new ModelPart(faces, texturePointers, normalPointers, null);
+			modelPart.buildNormalBuffer(normals);
+			modelPart.buildFaceBuffer();
+			parts.add(modelPart);
+		}
+		
+		if(model == null)
+			model = new Model(vertices, normals, textures, parts);
+		else{
+			model.setVertices(vertices);
+			model.setNormals(normals);
+			model.setTextures(textures);
+			model.setParts(parts);
+		}
+		
+		model.buildVertexBuffer();
+		
 		return NO_ERROR;
 	}
 }

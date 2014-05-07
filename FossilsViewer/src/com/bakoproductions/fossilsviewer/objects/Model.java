@@ -1,5 +1,7 @@
 package com.bakoproductions.fossilsviewer.objects;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.Vector;
 
@@ -11,6 +13,10 @@ public class Model {
 	private Vector<Float> textures;
 	private Vector<ModelPart> parts;
 	private FloatBuffer vertexBuffer;
+	
+	public Model(){
+		
+	}
 	
 	public Model(Vector<Float> verticies, Vector<Float> normals, Vector<Float> textures, Vector<ModelPart> parts){
 		this.vertices = verticies;
@@ -40,5 +46,38 @@ public class Model {
 			//gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
 			gl.glDisableClientState(GL10.GL_NORMAL_ARRAY);
 		}
+	}
+	
+	public void buildVertexBuffer(){
+		ByteBuffer vBuf = ByteBuffer.allocateDirect(vertices.size() * 4);
+		vBuf.order(ByteOrder.nativeOrder());
+		vertexBuffer = vBuf.asFloatBuffer();
+		vertexBuffer.put(toFloatArray(vertices));
+		vertexBuffer.position(0);
+	}
+	
+	public void setVertices(Vector<Float> vertices) {
+		this.vertices = vertices;
+	}
+	
+	public void setNormals(Vector<Float> normals) {
+		this.normals = normals;
+	}
+	
+	public void setTextures(Vector<Float> textures) {
+		this.textures = textures;
+	}
+	
+	public void setParts(Vector<ModelPart> parts) {
+		this.parts = parts;
+	}
+	
+	private float[] toFloatArray(Vector<Float> vector){
+		float[] f;
+		f = new float[vector.size()];
+		for (int i=0; i<vector.size(); i++){
+			f[i] = vector.get(i);
+		}
+		return f;
 	}
 }
