@@ -3,9 +3,11 @@ package com.bakoproductions.fossilsviewer.util;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Vector;
 
+import android.content.Context;
 import android.content.res.Resources;
 
 import com.bakoproductions.fossilsviewer.objects.Material;
@@ -13,9 +15,11 @@ import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
 
 public class OBJParser implements Parser {
+	private Context context;
 	private String objFile;
 	
-	public OBJParser(String objFile){
+	public OBJParser(Context context, String objFile){
+		this.context = context;
 		this.objFile = objFile;
 	}
 	
@@ -34,7 +38,7 @@ public class OBJParser implements Parser {
 		
 		
 		try {
-			FileInputStream inputStream = new FileInputStream(objFile);
+			InputStream inputStream = context.getAssets().open(objFile);
 			BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 			
 			String line;

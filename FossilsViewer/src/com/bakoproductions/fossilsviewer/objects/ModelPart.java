@@ -7,7 +7,8 @@ import java.nio.ShortBuffer;
 import java.util.Vector;
 
 import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
-import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;;
+import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;
+import static com.bakoproductions.fossilsviewer.util.Globals.TWO_DIM_ATTRS;;
 
 public class ModelPart {
 	private Vector<Short> faces;
@@ -43,7 +44,7 @@ public class ModelPart {
 	}
 	
 	public void buildFaceBuffer(){
-		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(faces.size() * 2);
+		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(faces.size() * TWO_DIM_ATTRS);
 		byteBuffer.order(ByteOrder.nativeOrder());
 		faceBuffer = byteBuffer.asShortBuffer();
 		faceBuffer.put(toShortArray(faces));

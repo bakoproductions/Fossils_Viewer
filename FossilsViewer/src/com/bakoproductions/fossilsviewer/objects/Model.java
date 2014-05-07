@@ -7,6 +7,8 @@ import java.util.Vector;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
+
 public class Model {
 	private Vector<Float> vertices;
 	private Vector<Float> normals;
@@ -49,7 +51,7 @@ public class Model {
 	}
 	
 	public void buildVertexBuffer(){
-		ByteBuffer vBuf = ByteBuffer.allocateDirect(vertices.size() * 4);
+		ByteBuffer vBuf = ByteBuffer.allocateDirect(vertices.size() * BYTES_PER_FLOAT);
 		vBuf.order(ByteOrder.nativeOrder());
 		vertexBuffer = vBuf.asFloatBuffer();
 		vertexBuffer.put(toFloatArray(vertices));
