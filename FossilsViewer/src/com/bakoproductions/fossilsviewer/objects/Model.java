@@ -7,17 +7,21 @@ import java.util.Vector;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.content.Context;
+import android.util.Log;
 import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 
 public class Model {
+	private Context context;
+	
 	private Vector<Float> vertices;
 	private Vector<Float> normals;
 	private Vector<Float> textures;
 	private Vector<ModelPart> parts;
 	private FloatBuffer vertexBuffer;
 	
-	public Model(){
-		
+	public Model(Context context){
+		this.context = context;
 	}
 	
 	public Model(Vector<Float> verticies, Vector<Float> normals, Vector<Float> textures, Vector<ModelPart> parts){
@@ -26,13 +30,14 @@ public class Model {
 		this.textures = textures;
 	}
 	
-	public void draw(GL10 gl){
-		gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertexBuffer);
+	public void draw(GL10 gl, int[] bindedTextures){
 		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
+		gl.glVertexPointer(3, GL10.GL_FLOAT, 0, vertexBuffer);
 		
 		for(int i=0; i<parts.size(); i++){
 			ModelPart modelPart = parts.get(i);
 			Material material = modelPart.getMaterial();
+			
 			if(material != null){
 				FloatBuffer a = material.getAmbientColorBuffer();
 				FloatBuffer d = material.getDiffuseColorBuffer();
@@ -40,13 +45,22 @@ public class Model {
 				gl.glMaterialfv(GL10.GL_FRONT_AND_BACK, GL10.GL_AMBIENT, a);
 				gl.glMaterialfv(GL10.GL_FRONT_AND_BACK, GL10.GL_SPECULAR, s);
 				gl.glMaterialfv(GL10.GL_FRONT_AND_BACK, GL10.GL_DIFFUSE, d);
+				
+				if(bindedTextures != null){
+					gl.glBindTexture(GL10.GL_TEXTURE_2D, bindedTextures[0]);
+					gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+					gl.glFrontFace(GL10.GL_CW);
+				}
 			}
 			gl.glEnableClientState(GL10.GL_NORMAL_ARRAY);
 			gl.glNormalPointer(GL10.GL_FLOAT, 0, modelPart.getNormalBuffer());
 			gl.glDrawElements(GL10.GL_TRIANGLES, modelPart.getFacesSize(), GL10.GL_UNSIGNED_SHORT, modelPart.getFaceBuffer());
+			FloatBuffer textureBuffer = modelPart.getTextureBuffer();
+			gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, textureBuffer);
 			//gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 			//gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
 			gl.glDisableClientState(GL10.GL_NORMAL_ARRAY);
+			gl.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 		}
 	}
 	
@@ -68,6 +82,10 @@ public class Model {
 	
 	public void setTextures(Vector<Float> textures) {
 		this.textures = textures;
+	}
+	
+	public Vector<ModelPart> getParts() {
+		return parts;
 	}
 	
 	public void setParts(Vector<ModelPart> parts) {

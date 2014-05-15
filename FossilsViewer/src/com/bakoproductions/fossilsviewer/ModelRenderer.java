@@ -3,13 +3,17 @@ package com.bakoproductions.fossilsviewer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.Vector;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import com.bakoproductions.fossilsviewer.objects.Material;
 import com.bakoproductions.fossilsviewer.objects.Model;
+import com.bakoproductions.fossilsviewer.objects.ModelPart;
+import com.bakoproductions.fossilsviewer.util.MTLParser;
 import com.bakoproductions.fossilsviewer.util.OBJParser;
-import com.bakoproductions.fossilsviewer.util.Parser;
+import com.bakoproductions.fossilsviewer.util.ModelParser;
 
 import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 import android.content.Context;
@@ -20,7 +24,9 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 public class ModelRenderer extends GLSurfaceView implements Renderer{
-	private OBJParser parser;
+	private OBJParser objParser;
+	private Context context;
+
 	private Model model;
 	
 	/* Rotation values */
@@ -40,21 +46,26 @@ public class ModelRenderer extends GLSurfaceView implements Renderer{
 	
 	private float[] lightAmbient = {1.0f, 1.0f, 1.0f, 1.0f};
 	private float[] lightDiffuse = {1.0f, 1.0f, 1.0f, 1.0f};
-	private float[] lightPosition = {0.0f, -3.0f, 2.0f, 1.0f};
+	private float[] lightPosition = {10.0f, 10.0f, 2.0f, 1.0f};
 	private FloatBuffer lightAmbientBuffer;
 	private FloatBuffer lightDiffuseBuffer;
 	private FloatBuffer lightPositionBuffer;
 	
+	int[] textures;
+	
 	public ModelRenderer(Context context) {
 		super(context);
+		this.context = context;
+		model = new Model(context);
 		
-		parser = new OBJParser(context, "cube.obj");
-		int result = parser.parse(model);
+		objParser = new OBJParser(context, "iphone.obj");
 		
-		if(result == Parser.IO_ERROR)
+		int resultOBJ = objParser.parse(model);
+		
+		if(resultOBJ == ModelParser.IO_ERROR)
 			return;
 		
-		if(result == Parser.RESOURCE_NOT_FOUND_ERROR)
+		if(resultOBJ == ModelParser.RESOURCE_NOT_FOUND_ERROR)
 			return;
 
 		this.setRenderer(this);
@@ -82,6 +93,17 @@ public class ModelRenderer extends GLSurfaceView implements Renderer{
 
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+		// Load the texture
+		Vector<ModelPart> parts = model.getParts();
+		for(ModelPart part: parts){
+			Material material = part.getMaterial();
+			if(material != null){
+				textures = material.loadTexture(gl, context);
+			}
+		}
+				
+		gl.glEnable(GL10.GL_TEXTURE_2D);
+		
 		gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_AMBIENT, lightAmbientBuffer);		
 		gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_DIFFUSE, lightDiffuseBuffer);		
 		gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_POSITION, lightPositionBuffer);	
@@ -94,7 +116,7 @@ public class ModelRenderer extends GLSurfaceView implements Renderer{
 		gl.glEnable(GL10.GL_DEPTH_TEST); 			
 		gl.glDepthFunc(GL10.GL_LEQUAL); 		
 	
-		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
+		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);			
 	}
 
 	@Override
@@ -120,10 +142,12 @@ public class ModelRenderer extends GLSurfaceView implements Renderer{
 		gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);	
 		gl.glLoadIdentity();					
 		gl.glEnable(GL10.GL_LIGHTING);
+		
 		gl.glTranslatef(0.0f, -1.2f, -z);	//Move down 1.2 Unit And Into The Screen 6.0
 		gl.glRotatef(xrot, 1.0f, 0.0f, 0.0f);	//X
 		gl.glRotatef(yrot, 0.0f, 1.0f, 0.0f);	//Y
-		model.draw(gl);						//Draw the square
+		gl.glScalef(10, 10, 10);
+		model.draw(gl, textures);						//Draw the square
 		gl.glLoadIdentity();
 		
 		xrot += xspeed;

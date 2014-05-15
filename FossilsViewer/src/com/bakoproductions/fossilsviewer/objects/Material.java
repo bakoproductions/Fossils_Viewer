@@ -1,8 +1,21 @@
 package com.bakoproductions.fossilsviewer.objects;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+
+import javax.microedition.khronos.opengles.GL10;
+
+import com.bakoproductions.fossilsviewer.R;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
+import android.opengl.GLUtils;
+import android.util.Log;
+
 
 public class Material {
 	String name;
@@ -86,7 +99,32 @@ public class Material {
 		specularColor[1] = g;
 		specularColor[2] = b;
 	}
+	
+	public int[] loadTexture(GL10 gl, Context context){
+		if(textureFile == null)
+			return null;
+		
+		int resId = getResourceId(textureFile, R.drawable.class);
 
+		if(resId == -1)
+			return null;
+		
+		Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), resId);
+		
+		int[] textures = new int[1];
+		gl.glGenTextures(1, textures, 0);
+		gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
+		
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+		
+		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0);
+
+		bitmap.recycle();
+		
+		return textures;
+	}
+	
 	public float getAlpha() {
 		return alpha;
 	}
@@ -116,7 +154,13 @@ public class Material {
 	}
 
 	public void setTextureFileName(String textureFile) {
-		this.textureFile = textureFile;
+		// Remove suffix from file name
+		int dotIndex = textureFile.indexOf('.');
+		if(dotIndex != -1){
+			this.textureFile = textureFile.substring(0, dotIndex);
+		}else{
+			this.textureFile = textureFile;
+		}
 	}
 	
 	/*public String toString(){
@@ -129,5 +173,14 @@ public class Material {
 		str+="\nShine: "+shine;
 		return str;
 	}*/
+	
+	private static int getResourceId(String iconName, Class<?> c) {
+	    try {
+	        Field idField = c.getDeclaredField(iconName);
+	        return idField.getInt(idField);
+	    } catch (Exception e) {
+	        return -1;
+	    } 
+	}
 }
 

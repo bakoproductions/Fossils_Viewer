@@ -9,14 +9,16 @@ import java.util.Vector;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.util.Log;
 
 import com.bakoproductions.fossilsviewer.objects.Material;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
 
-public class OBJParser implements Parser {
+public class OBJParser implements ModelParser {
 	private Context context;
 	private String objFile;
+	private MTLParser mtlParser;
 	
 	public OBJParser(Context context, String objFile){
 		this.context = context;
@@ -30,38 +32,43 @@ public class OBJParser implements Parser {
 		Vector<Float> textures = new Vector<Float>();
 		Vector<Short> faces = new Vector<Short>();
 		
-		Vector<Short> texturePointers=new Vector<Short>();
-		Vector<Short> normalPointers=new Vector<Short>();
+		Vector<Short> texturePointers = new Vector<Short>();
+		Vector<Short> normalPointers = new Vector<Short>();
 		
-		Vector<ModelPart> parts= new Vector<ModelPart>();
-		Vector<Material> materials;
+		Vector<ModelPart> parts = new Vector<ModelPart>();
+		Vector<Material> materials = new Vector<Material>();
 		
-		
+		Material currentMtl = null;
 		try {
 			InputStream inputStream = context.getAssets().open(objFile);
 			BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 			
 			String line;
 			while((line = br.readLine()) != null){
-				if(line.startsWith("v")){
-					String[] splitted = line.split("[ ]+");
- 
-					for(int i=1; i<splitted.length; i++){
-						vertices.add(Float.valueOf(splitted[i]));
-					}
-				}else if(line.startsWith("vn")){
+				//Log.d("Bako", line);
+				if(line.startsWith("vn")){
+					//Log.d("Bako", "vn");
 					String[] splitted = line.split("[ ]+"); 
 		 
 					for(int i=1; i<splitted.length; i++){ 
 						normals.add(Float.valueOf(splitted[i]));
 					}
 				}else if(line.startsWith("vt")){
+					//Log.d("Bako", "vt");
 					String[] splitted = line.split("[ ]+"); 
 					 
 					for(int i=1; i<splitted.length; i++){
 						textures.add(Float.valueOf(splitted[i]));
 					}
+				}else if(line.startsWith("v")){
+					//Log.d("Bako", "v");
+					String[] splitted = line.split("[ ]+");
+ 
+					for(int i=1; i<splitted.length; i++){
+						vertices.add(Float.valueOf(splitted[i]));
+					}
 				}else if(line.startsWith("f")){
+					//Log.d("Bako", "f");
 					String[] splitted = line.split("[ ]+");
 					if(splitted[1].matches("[0-9]+")){
 						// f v v v ...
@@ -174,9 +181,37 @@ public class OBJParser implements Parser {
 							texturePointers.addAll(Triangulator.triangulate(tmpTextures));
 							normalPointers.addAll(Triangulator.triangulate(tmpNormals));
 						}
-						continue;
 					}
-				} 
+				}else if(line.startsWith("mtllib")){
+					// start parsing the mtl file
+					String mtlFile = line.split("[ ]+",2)[1];
+					mtlParser = new MTLParser(context, mtlFile);
+					int result = mtlParser.parse(materials);
+					
+					if(result != MaterialParser.NO_ERROR)
+						return result;
+				}else if(line.startsWith("usemtl")){
+					if(faces.size() != 0){
+						ModelPart modelPart = new ModelPart(faces, texturePointers, normalPointers, currentMtl);
+						modelPart.buildNormalBuffer(normals);
+						modelPart.buildTextureBuffer(textures);
+						modelPart.buildFaceBuffer();
+						parts.add(modelPart);
+					}
+		
+					String materialName = line.split("[ ]+",2)[1];
+					for(int i=0; i<materials.size(); i++){
+						currentMtl = materials.get(i);
+						if(currentMtl.getName().equals(materialName)){
+							break;
+						}
+						currentMtl = null;
+					}
+					
+					faces = new Vector<Short>();
+					texturePointers = new Vector<Short>();
+					normalPointers = new Vector<Short>();
+				}
 			}
 		} catch (IOException e) {
 			return IO_ERROR;
@@ -185,20 +220,18 @@ public class OBJParser implements Parser {
 		}
 		
 		if(faces.size() != 0){
-			ModelPart modelPart = new ModelPart(faces, texturePointers, normalPointers, null);
+			ModelPart modelPart = new ModelPart(faces, texturePointers, normalPointers, currentMtl);
 			modelPart.buildNormalBuffer(normals);
+			modelPart.buildTextureBuffer(textures);
 			modelPart.buildFaceBuffer();
 			parts.add(modelPart);
 		}
 		
-		if(model == null)
-			model = new Model(vertices, normals, textures, parts);
-		else{
-			model.setVertices(vertices);
-			model.setNormals(normals);
-			model.setTextures(textures);
-			model.setParts(parts);
-		}
+		model.setVertices(vertices);
+		model.setNormals(normals);
+		model.setTextures(textures);
+		model.setParts(parts);
+		
 		
 		model.buildVertexBuffer();
 		
