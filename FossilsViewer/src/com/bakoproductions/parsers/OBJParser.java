@@ -1,4 +1,4 @@
-package com.bakoproductions.fossilsviewer.util;
+package com.bakoproductions.parsers;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -14,6 +14,7 @@ import android.util.Log;
 import com.bakoproductions.fossilsviewer.objects.Material;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
+import com.bakoproductions.fossilsviewer.util.Triangulator;
 
 public class OBJParser implements ModelParser {
 	private Context context;

@@ -1,4 +1,4 @@
-package com.bakoproductions.fossilsviewer.util;
+package com.bakoproductions.parsers;
 
 import java.util.Vector;
 

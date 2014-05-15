@@ -11,9 +11,9 @@ import javax.microedition.khronos.opengles.GL10;
 import com.bakoproductions.fossilsviewer.objects.Material;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
-import com.bakoproductions.fossilsviewer.util.MTLParser;
-import com.bakoproductions.fossilsviewer.util.OBJParser;
-import com.bakoproductions.fossilsviewer.util.ModelParser;
+import com.bakoproductions.parsers.MTLParser;
+import com.bakoproductions.parsers.ModelParser;
+import com.bakoproductions.parsers.OBJParser;
 
 import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 import android.content.Context;
