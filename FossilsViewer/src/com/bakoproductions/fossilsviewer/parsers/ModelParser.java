@@ -1,4 +1,4 @@
-package com.bakoproductions.parsers;
+package com.bakoproductions.fossilsviewer.parsers;
 
 import com.bakoproductions.fossilsviewer.objects.Model;
 

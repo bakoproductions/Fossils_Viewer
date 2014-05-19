@@ -43,9 +43,9 @@ public class ModelPart {
 		byteBuf.order(ByteOrder.nativeOrder());
 		normalBuffer = byteBuf.asFloatBuffer();
 		for(int i=0; i<normalPointers.size(); i++){
-			float x = normals.get(normalPointers.get(i) );
-			float y = normals.get(normalPointers.get(i) + 1); // vale kai to THREE_DIM_ATTRS
-			float z = normals.get(normalPointers.get(i) + 2);
+			float x = normals.get(normalPointers.get(i) * THREE_DIM_ATTRS);
+			float y = normals.get(normalPointers.get(i) * THREE_DIM_ATTRS + 1);
+			float z = normals.get(normalPointers.get(i) * THREE_DIM_ATTRS + 2);
 			normalBuffer.put(x);
 			normalBuffer.put(y);
 			normalBuffer.put(z);
@@ -67,8 +67,9 @@ public class ModelPart {
 		textureBuffer = byteBuffer.asFloatBuffer();
 
 		for(int i=0; i<texturePointers.size(); i++){
-			float u = textures.get(texturePointers.get(i));
-			float v = textures.get(texturePointers.get(i) + 1);
+			float u = textures.get(texturePointers.get(i) * TWO_DIM_ATTRS);
+			float v = textures.get(texturePointers.get(i) * TWO_DIM_ATTRS + 1);
+			//Log.d("Bako", "textPointer:" + Integer.valueOf(texturePointers.get(i) + 1) + " " + u + " " + v);
 			textureBuffer.put(u);
 			textureBuffer.put(v);
 		}

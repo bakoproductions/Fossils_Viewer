@@ -1,4 +1,4 @@
-package com.bakoproductions.parsers;
+package com.bakoproductions.fossilsviewer.parsers;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;

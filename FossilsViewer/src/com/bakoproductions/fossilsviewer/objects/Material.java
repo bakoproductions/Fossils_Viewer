@@ -8,6 +8,7 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 import com.bakoproductions.fossilsviewer.R;
+import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -46,13 +47,14 @@ public class Material {
 	}
 	
 	public FloatBuffer getAmbientColorBuffer(){
-		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(12);
+		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(ambientColor.length * BYTES_PER_FLOAT);
 		byteBuffer.order(ByteOrder.nativeOrder());
 		FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
 		floatBuffer.put(ambientColor);
 		floatBuffer.position(0);
 		return floatBuffer;
 	}
+	
 	public void setAmbientColor(float r, float g, float b) {
 		ambientColor = new float[3];
 		ambientColor[0] = r;
@@ -65,7 +67,7 @@ public class Material {
 	}
 	
 	public FloatBuffer getDiffuseColorBuffer(){
-		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(12);
+		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(diffuseColor.length * BYTES_PER_FLOAT);
 		byteBuffer.order(ByteOrder.nativeOrder());
 		FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
 		floatBuffer.put(diffuseColor);
@@ -115,9 +117,12 @@ public class Material {
 		gl.glGenTextures(1, textures, 0);
 		gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
 		
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
+		/*
 		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
 		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-		
+		*/
 		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0);
 
 		bitmap.recycle();
