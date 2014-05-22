@@ -8,12 +8,13 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 import com.bakoproductions.fossilsviewer.R;
-import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 
+import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.util.Log;
 
@@ -108,8 +109,10 @@ public class Material {
 		
 		int resId = getResourceId(textureFile, R.drawable.class);
 
-		if(resId == -1)
+		if(resId == -1){
+			Log.d("Bako", "Texture not found...");
 			return null;
+		}
 		
 		Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), resId);
 		
@@ -117,12 +120,17 @@ public class Material {
 		gl.glGenTextures(1, textures, 0);
 		gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
 		
-		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
-		/*
-		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_NEAREST);
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
 		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-		*/
+		
+		/*gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);*/
+		
+		/*int size = bitmap.getRowBytes() * bitmap.getHeight();
+		ByteBuffer buffer = ByteBuffer.allocateDirect(size);
+		bitmap.copyPixelsToBuffer(buffer);
+		gl.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap.getWidth(), bitmap.getHeight(), 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_INT, buffer);*/
+		
 		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0);
 
 		bitmap.recycle();
@@ -167,17 +175,6 @@ public class Material {
 			this.textureFile = textureFile;
 		}
 	}
-	
-	/*public String toString(){
-		String str=new String();
-		str+="Material name: "+name;	
-		str+="\nAmbient color: "+ambientColor.toString();
-		str+="\nDiffuse color: "+diffuseColor.toString();	
-		str+="\nSpecular color: "+specularColor.toString();
-		str+="\nAlpha: "+alpha;
-		str+="\nShine: "+shine;
-		return str;
-	}*/
 	
 	private static int getResourceId(String iconName, Class<?> c) {
 	    try {

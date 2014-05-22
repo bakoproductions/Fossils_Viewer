@@ -68,12 +68,12 @@ public class ModelPart {
 
 		for(int i=0; i<texturePointers.size(); i++){
 			float u = textures.get(texturePointers.get(i) * TWO_DIM_ATTRS);
-			float v = textures.get(texturePointers.get(i) * TWO_DIM_ATTRS + 1);
+			float v = 1 - textures.get(texturePointers.get(i) * TWO_DIM_ATTRS + 1);
 			//Log.d("Bako", "textPointer:" + Integer.valueOf(texturePointers.get(i) + 1) + " " + u + " " + v);
 			textureBuffer.put(u);
 			textureBuffer.put(v);
 		}
-		textureBuffer.position(0);
+		textureBuffer.position(0);	
 	}
 	
 	public FloatBuffer getNormalBuffer(){
