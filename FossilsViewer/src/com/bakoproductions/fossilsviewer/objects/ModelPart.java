@@ -14,10 +14,10 @@ import android.graphics.BitmapFactory;
 import android.opengl.GLUtils;
 import android.util.Log;
 import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
+import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_SHORT;
 import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;
 import static com.bakoproductions.fossilsviewer.util.Globals.TWO_DIM_ATTRS;
 
-import com.bakoproductions.fossilsviewer.R;
 
 public class ModelPart {
 	private Vector<Short> faces;
@@ -43,18 +43,17 @@ public class ModelPart {
 		byteBuf.order(ByteOrder.nativeOrder());
 		normalBuffer = byteBuf.asFloatBuffer();
 		for(int i=0; i<normalPointers.size(); i++){
-			float x = normals.get(normalPointers.get(i) * THREE_DIM_ATTRS);
-			float y = normals.get(normalPointers.get(i) * THREE_DIM_ATTRS + 1);
-			float z = normals.get(normalPointers.get(i) * THREE_DIM_ATTRS + 2);
-			normalBuffer.put(x);
-			normalBuffer.put(y);
-			normalBuffer.put(z);
+			int index = normalPointers.get(i);
+			
+			normalBuffer.put(normals.get(index * THREE_DIM_ATTRS));
+			normalBuffer.put(normals.get(index * THREE_DIM_ATTRS + 1));
+			normalBuffer.put(normals.get(index * THREE_DIM_ATTRS + 2));
 		}
 		normalBuffer.position(0);
 	}
 	
 	public void buildFaceBuffer(){
-		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(faces.size() * TWO_DIM_ATTRS);
+		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(faces.size() * BYTES_PER_SHORT);
 		byteBuffer.order(ByteOrder.nativeOrder());
 		faceBuffer = byteBuffer.asShortBuffer();
 		faceBuffer.put(toShortArray(faces));
@@ -67,11 +66,11 @@ public class ModelPart {
 		textureBuffer = byteBuffer.asFloatBuffer();
 
 		for(int i=0; i<texturePointers.size(); i++){
-			float u = textures.get(texturePointers.get(i) * TWO_DIM_ATTRS);
-			float v = 1 - textures.get(texturePointers.get(i) * TWO_DIM_ATTRS + 1);
+			int index = texturePointers.get(i);
+			
 			//Log.d("Bako", "textPointer:" + Integer.valueOf(texturePointers.get(i) + 1) + " " + u + " " + v);
-			textureBuffer.put(u);
-			textureBuffer.put(v);
+			textureBuffer.put(textures.get(index * TWO_DIM_ATTRS));
+			textureBuffer.put(1 - textures.get(index * TWO_DIM_ATTRS + 1));
 		}
 		textureBuffer.position(0);	
 	}
@@ -101,6 +100,7 @@ public class ModelPart {
 		
 		for (int i=0; i<vector.size(); i++){
 			s[i] = vector.get(i);
+			//Log.d("Bako", s[i] + "");
 		}
 		return s;
 	}

@@ -10,6 +10,7 @@ import javax.microedition.khronos.opengles.GL10;
 import android.content.Context;
 import android.util.Log;
 import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
+import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;;
 
 public class Model {
 	private Context context;
@@ -68,18 +69,25 @@ public class Model {
 			gl.glEnableClientState(GL10.GL_NORMAL_ARRAY);
 			gl.glNormalPointer(GL10.GL_FLOAT, 0, modelPart.getNormalBuffer());
 			gl.glDrawElements(GL10.GL_TRIANGLES, modelPart.getFacesSize(), GL10.GL_UNSIGNED_SHORT, modelPart.getFaceBuffer());
-			//gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
-			//gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
+			
+			gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
+			gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
 			gl.glDisableClientState(GL10.GL_NORMAL_ARRAY);
 			gl.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
 		}
 	}
 	
-	public void buildVertexBuffer(){
-		ByteBuffer vBuf = ByteBuffer.allocateDirect(vertices.size() * BYTES_PER_FLOAT);
+	public void buildVertexBuffer(Vector<Short> vertexPointers){
+		ByteBuffer vBuf = ByteBuffer.allocateDirect(vertexPointers.size() * BYTES_PER_FLOAT * THREE_DIM_ATTRS);
 		vBuf.order(ByteOrder.nativeOrder());
 		vertexBuffer = vBuf.asFloatBuffer();
-		vertexBuffer.put(toFloatArray(vertices));
+		for(int i=0;i<vertexPointers.size();i++){
+			int index = vertexPointers.get(i);
+			
+			vertexBuffer.put(vertices.get(index * THREE_DIM_ATTRS));
+			vertexBuffer.put(vertices.get(index * THREE_DIM_ATTRS + 1));
+			vertexBuffer.put(vertices.get(index * THREE_DIM_ATTRS + 2));
+		}
 		vertexBuffer.position(0);
 	}
 	
@@ -101,14 +109,5 @@ public class Model {
 	
 	public void setParts(Vector<ModelPart> parts) {
 		this.parts = parts;
-	}
-	
-	private float[] toFloatArray(Vector<Float> vector){
-		float[] f;
-		f = new float[vector.size()];
-		for (int i=0; i<vector.size(); i++){
-			f[i] = vector.get(i);
-		}
-		return f;
 	}
 }

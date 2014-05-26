@@ -7,14 +7,12 @@ import java.nio.FloatBuffer;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 import com.bakoproductions.fossilsviewer.R;
 
-import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
-import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.util.Log;
 

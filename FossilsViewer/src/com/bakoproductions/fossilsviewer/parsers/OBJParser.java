@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.Vector;
 
 import android.content.Context;
@@ -15,6 +16,9 @@ import com.bakoproductions.fossilsviewer.objects.Material;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
 import com.bakoproductions.fossilsviewer.util.Triangulator;
+import com.bakoproductions.fossilsviewer.util.Util;
+
+import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;;
 
 public class OBJParser implements ModelParser {
 	private Context context;
@@ -31,16 +35,20 @@ public class OBJParser implements ModelParser {
 		Vector<Float> vertices = new Vector<Float>();
 		Vector<Float> normals = new Vector<Float>();
 		Vector<Float> textures = new Vector<Float>();
-		Vector<Short> faces = new Vector<Short>();
 		
+		Vector<Short> vertexPointers = new Vector<Short>();
 		Vector<Short> texturePointers = new Vector<Short>();
 		Vector<Short> normalPointers = new Vector<Short>();
+		Vector<Short> faces = new Vector<Short>();
 		
 		Vector<ModelPart> parts = new Vector<ModelPart>();
 		Vector<Material> materials = new Vector<Material>();
 		
 		Material currentMtl = null;
 		try {
+			HashMap<String, Short> uniqueFaces = new HashMap<String, Short>();
+			Short nextIndex = 0;
+			
 			InputStream inputStream = context.getAssets().open(objFile);
 			BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 			
@@ -69,119 +77,43 @@ public class OBJParser implements ModelParser {
 						vertices.add(Float.valueOf(splitted[i]));
 					}
 				}else if(line.startsWith("f")){
-					//Log.d("Bako", "f");
 					String[] splitted = line.split("[ ]+");
 					if(splitted[1].matches("[0-9]+")){
 						// f v v v ...
 						if(splitted.length == 4){
 							for(int i=1; i<splitted.length; i++){
-								Short s = Short.valueOf(splitted[i]);
-								s--;
-								faces.add(s);
+								nextIndex = Util.addPointerV(i, splitted, uniqueFaces, nextIndex, vertexPointers, faces);
 							}
 						}else{
-							Vector<Short> polygon = new Vector<Short>();
-							for(int i=1; i<splitted.length; i++){
-								Short s = Short.valueOf(splitted[i]);
-								s--;
-								polygon.add(s);
-							}
-							faces.addAll(Triangulator.triangulate(polygon));
-						}
-						
+							nextIndex = Triangulator.triangulateV(splitted, uniqueFaces, nextIndex, vertexPointers, faces);
+						}			
 					}else if(splitted[1].matches("[0-9]+/[0-9]+")){
 						// f v/vt ...
 						if(splitted.length == 4){
-							for(int i=1; i<splitted.length; i++){
-								// The first value designates a face
-								Short s = Short.valueOf(splitted[i].split("/")[0]);
-								s--;
-								faces.add(s);
-								
-								// The second value designates a texture
-								s = Short.valueOf(splitted[i].split("/")[1]);
-								s--;
-								texturePointers.add(s);
+							for(int i = 1; i < splitted.length; i++){								
+								nextIndex = Util.addPointerVT(i, splitted, uniqueFaces, nextIndex, vertexPointers, texturePointers, faces);
 							}
-						}else{
-							Vector<Short> tmpFaces = new Vector<Short>();
-							Vector<Short> tmpTextures = new Vector<Short>();
-							for(int i=1; i<splitted.length; i++){
-								Short s = Short.valueOf(splitted[i].split("/")[0]);
-								s--;
-								tmpFaces.add(s);
-								
-								s = Short.valueOf(splitted[i].split("/")[1]);
-								s--;
-								tmpTextures.add(s);
-							}
-							faces.addAll(Triangulator.triangulate(tmpFaces));
-							texturePointers.addAll(Triangulator.triangulate(tmpTextures));
+						}else{ // triangulate 
+							nextIndex = Triangulator.triangulateVT(splitted, uniqueFaces, nextIndex, vertexPointers, texturePointers, faces);
 						}
 					}else if(splitted[1].matches("[0-9]+//[0-9]+")){
 						//f v//vn ...
 						if(splitted.length == 4){
 							for(int i=1; i<splitted.length; i++){
-								Short s = Short.valueOf(splitted[i].split("//")[0]);
-								s--;
-								faces.add(s);
-								
-								s=Short.valueOf(splitted[i].split("//")[1]);
-								s--;
-								normalPointers.add(s);
+								nextIndex = Util.addPointerVN(i, splitted, uniqueFaces, nextIndex, vertexPointers, normalPointers, faces);
 							}
 						}else{
-							Vector<Short> tmpFaces = new Vector<Short>();
-							Vector<Short> tmpNormals = new Vector<Short>();
-							for(int i=1; i<splitted.length; i++){
-								Short s = Short.valueOf(splitted[i].split("//")[0]);
-								s--;
-								tmpFaces.add(s);
-								
-								s = Short.valueOf(splitted[i].split("//")[1]);
-								s--;
-								tmpNormals.add(s);
-							}
-							faces.addAll(Triangulator.triangulate(tmpFaces));
-							normalPointers.addAll(Triangulator.triangulate(tmpNormals));
+							nextIndex = Triangulator.triangulateVN(splitted, uniqueFaces, nextIndex, vertexPointers, normalPointers, faces);
 						}
 					}else if(splitted[1].matches("[0-9]+/[0-9]+/[0-9]+")){
 						//f v/vt/vn ...
 						if(splitted.length == 4){
 							for(int i=1; i<splitted.length; i++){
-								Short s=Short.valueOf(splitted[i].split("/")[0]);
-								s--;
-								faces.add(s);
-								
-								s=Short.valueOf(splitted[i].split("/")[1]);
-								s--;
-								texturePointers.add(s);
-								
-								s=Short.valueOf(splitted[i].split("/")[2]);
-								s--;
-								normalPointers.add(s);
+								nextIndex = Util.addPointerVTN(i, splitted, uniqueFaces, nextIndex, vertexPointers, normalPointers, texturePointers, faces);
 							}
 						}else{
-							Vector<Short> tmpFaces = new Vector<Short>();
-							Vector<Short> tmpNormals = new Vector<Short>();
-							Vector<Short> tmpTextures = new Vector<Short>();
-							for(int i=1; i<splitted.length; i++){
-								Short s = Short.valueOf(splitted[i].split("/")[0]);
-								s--;
-								tmpFaces.add(s);
-								
-								s = Short.valueOf(splitted[i].split("/")[1]);
-								s--;
-								tmpTextures.add(s);
-								
-								s=Short.valueOf(splitted[i].split("/")[2]);
-								s--;
-								tmpTextures.add(s);
-							}
-							faces.addAll(Triangulator.triangulate(tmpFaces));
-							texturePointers.addAll(Triangulator.triangulate(tmpTextures));
-							normalPointers.addAll(Triangulator.triangulate(tmpNormals));
-						}
+							nextIndex = Triangulator.triangulateVTN(splitted, uniqueFaces, nextIndex, vertexPointers, texturePointers, normalPointers, faces);
+						}						
 					}
 				}else if(line.startsWith("mtllib")){
 					// start parsing the mtl file
@@ -234,7 +166,7 @@ public class OBJParser implements ModelParser {
 		model.setParts(parts);
 		
 		
-		model.buildVertexBuffer();
+		model.buildVertexBuffer(vertexPointers);
 		
 		return NO_ERROR;
 	}
