@@ -46,7 +46,7 @@ public class Model {
 		if(bindedTextures != null){
 			gl.glBindTexture(GL10.GL_TEXTURE_2D, bindedTextures[0]);
 			gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
-			gl.glFrontFace(GL10.GL_CW);
+			//gl.glFrontFace(GL10.GL_CW);
 		}
 		
 		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);
