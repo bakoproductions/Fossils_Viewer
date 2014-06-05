@@ -42,11 +42,16 @@ public class Model {
 		}
 	}
 	
+	public void prepareTextures(GL10 gl){
+		for(int i=0;i<parts.size();i++){
+			ModelPart part = parts.get(i);
+		}
+	}
+	
 	public void draw(GL10 gl){
 		if(bindedTextures != null){
 			gl.glBindTexture(GL10.GL_TEXTURE_2D, bindedTextures[0]);
 			gl.glEnableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
-			//gl.glFrontFace(GL10.GL_CW);
 		}
 		
 		gl.glEnableClientState(GL10.GL_VERTEX_ARRAY);

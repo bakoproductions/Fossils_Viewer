@@ -1,4 +1,4 @@
-package com.bakoproductions.fossilsviewer;
+package com.bakoproductions.fossilsviewer.ar;
 
 import java.nio.FloatBuffer;
 
@@ -14,7 +14,7 @@ import edu.dhbw.andar.util.GraphicsUtil;
  * @author tobi
  *
  */
-public class CustomRenderer implements OpenGLRenderer {
+public class ARRenderer implements OpenGLRenderer {
 	
 	/**
 	 * Light definitions

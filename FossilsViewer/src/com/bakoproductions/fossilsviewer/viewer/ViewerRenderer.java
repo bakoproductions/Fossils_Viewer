@@ -1,4 +1,4 @@
-package com.bakoproductions.fossilsviewer;
+package com.bakoproductions.fossilsviewer.viewer;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -23,7 +23,7 @@ import android.opengl.GLSurfaceView.Renderer;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
-public class ModelRenderer extends GLSurfaceView implements Renderer{
+public class ViewerRenderer extends GLSurfaceView implements Renderer{
 	private OBJParser objParser;
 	private Context context;
 
@@ -31,7 +31,7 @@ public class ModelRenderer extends GLSurfaceView implements Renderer{
 	
 	/* Rotation values */
 	private float xrot;					//X Rotation
-	private float yrot;					//Y Rotation
+	private float yrot = -90.0f;				//Y Rotation
 
 	/* Rotation speed values */
 	
@@ -44,30 +44,21 @@ public class ModelRenderer extends GLSurfaceView implements Renderer{
     private float oldY;
 	private final float TOUCH_SCALE = 0.4f;		//Proved to be good for normal rotation ( NEW )
 	
-	private float[] lightAmbient = {1.0f, 1.0f, 1.0f, 1.0f};
-	private float[] lightDiffuse = {1.0f, 1.0f, 1.0f, 1.0f};
-	private float[] lightPosition = {10.0f, 10.0f, 10.0f, 1.0f};
+	private float[] lightAmbient = {0.8f, 0.8f, 0.8f, 1.0f};
+	private float[] lightDiffuse = {0.8f, 0.8f, 0.8f, 1.0f};
+	private float[] lightPosition = {0.0f, 2.0f, 2.0f, 1.0f};
 	private FloatBuffer lightAmbientBuffer;
 	private FloatBuffer lightDiffuseBuffer;
 	private FloatBuffer lightPositionBuffer;
 	
-	public ModelRenderer(Context context) {
+	public ViewerRenderer(Context context, Model model) {
 		super(context);
 		this.context = context;
-		model = new Model(context);
-		
-		objParser = new OBJParser(context, "iphone.obj");
-		int resultOBJ = objParser.parse(model);
-		
-		if(resultOBJ == ModelParser.IO_ERROR)
-			return;
-		
-		if(resultOBJ == ModelParser.RESOURCE_NOT_FOUND_ERROR)
-			return;
 
+		this.model = model;
 		this.setRenderer(this);
-		this.requestFocus();
-		this.setFocusableInTouchMode(true);
+		//this.requestFocus();
+		//this.setFocusableInTouchMode(true);
 		
 		ByteBuffer byteBuf = ByteBuffer.allocateDirect(lightAmbient.length * BYTES_PER_FLOAT);
 		byteBuf.order(ByteOrder.nativeOrder());
@@ -89,17 +80,23 @@ public class ModelRenderer extends GLSurfaceView implements Renderer{
 	}
 
 	@Override
-	public void onSurfaceCreated(GL10 gl, EGLConfig config) {		
+	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+		//gl.glEnable(GL10.GL_LIGHTING);
 		gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_AMBIENT, lightAmbientBuffer);		
 		gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_DIFFUSE, lightDiffuseBuffer);		
 		gl.glLightfv(GL10.GL_LIGHT0, GL10.GL_POSITION, lightPositionBuffer);	
 		gl.glEnable(GL10.GL_LIGHT0);
-									
+		
+		gl.glMatrixMode(GL10.GL_PROJECTION);
+		gl.glLoadIdentity();
+		gl.glMatrixMode(GL10.GL_MODELVIEW);
+		gl.glLoadIdentity();
+		
 		// Load the texture
-		gl.glEnable(GL10.GL_TEXTURE_2D);
-		gl.glShadeModel(GL10.GL_SMOOTH);
 		gl.glClearColor(1.0f, 1.0f, 1.0f, 0.5f); 	
-		gl.glClearDepthf(1.0f); 					
+		gl.glClearDepthf(1.0f);
+		gl.glEnable(GL10.GL_TEXTURE_2D);
+		gl.glShadeModel(GL10.GL_SMOOTH);					
 		gl.glEnable(GL10.GL_DEPTH_TEST); 			
 		gl.glDepthFunc(GL10.GL_LEQUAL); 		
 		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
@@ -126,10 +123,9 @@ public class ModelRenderer extends GLSurfaceView implements Renderer{
 	@Override
 	public void onDrawFrame(GL10 gl) {
 		gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);	
-		gl.glEnable(GL10.GL_LIGHTING);
 		
 		gl.glLoadIdentity();					
-		gl.glTranslatef(0.0f, -5.0f, -z);	//Move down 1.2 Unit And Into The Screen 6.0
+		gl.glTranslatef(0.0f, 0.0f, -20.0f);	//Move down 1.2 Unit And Into The Screen 6.0
 		gl.glRotatef(xrot, 1.0f, 0.0f, 0.0f);	//X
 		gl.glRotatef(yrot, 0.0f, 1.0f, 0.0f);	//Y
 		gl.glScalef(5, 5, 5);

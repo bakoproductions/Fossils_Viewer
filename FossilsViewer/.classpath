@@ -5,10 +5,6 @@
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
-	<classpathentry exported="true" kind="lib" path="/AndARSampleProject/lib/AndAR.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/AndARSampleProject/lib/AndAR_doc.zip!/doc"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="lib/AndAR.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
