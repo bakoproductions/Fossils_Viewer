@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream.GetField;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -12,6 +13,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.util.Log;
 
+import com.bakoproductions.fossilsviewer.objects.BoundingSphere;
 import com.bakoproductions.fossilsviewer.objects.Material;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
@@ -45,6 +47,14 @@ public class OBJParser implements ModelParser {
 		Vector<Material> materials = new Vector<Material>();
 		
 		Material currentMtl = null;
+		float minX = 0;
+		float maxX = 0;
+		
+		float minY = 0;
+		float maxY = 0;
+		
+		float minZ = 0;
+		float maxZ = 0;
 		try {
 			HashMap<String, Short> uniqueFaces = new HashMap<String, Short>();
 			Short nextIndex = 0;
@@ -52,7 +62,7 @@ public class OBJParser implements ModelParser {
 			InputStream inputStream = context.getAssets().open(objFile);
 			BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 			
-			String line;
+			String line;			
 			while((line = br.readLine()) != null){
 				//Log.d("Bako", line);
 				if(line.startsWith("vn")){
@@ -74,7 +84,20 @@ public class OBJParser implements ModelParser {
 					String[] splitted = line.split("[ ]+");
  
 					for(int i=1; i<splitted.length; i++){
-						vertices.add(Float.valueOf(splitted[i]));
+						float vertex = Float.valueOf(splitted[i]);
+						
+						if(i == 1){
+							maxX = getMax(vertex, maxX);
+							minX = getMin(vertex, minX);
+						}else if(i == 2){
+							maxY = getMax(vertex, maxY);
+							minY = getMin(vertex, minY);
+						}else if(i == 3){
+							maxZ = getMax(vertex, maxZ);
+							minZ = getMin(vertex, minZ);
+						}
+						
+						vertices.add(vertex);
 					}
 				}else if(line.startsWith("f")){
 					String[] splitted = line.split("[ ]+");
@@ -164,10 +187,50 @@ public class OBJParser implements ModelParser {
 		model.setNormals(normals);
 		model.setTextures(textures);
 		model.setParts(parts);
-		
-		
 		model.buildVertexBuffer(vertexPointers);
 		
+		// Create an imaginary sphere around the model
+		float[] center = getCenterPoint(minX, maxX, minY, maxY, minZ, maxZ);
+		float diameter = computeDiameter(minX, maxX, minY, maxY, minZ, maxZ);
+		
+		BoundingSphere sphere = new BoundingSphere(center, diameter);
+		model.applyBoundingSphere(sphere);
+		
 		return NO_ERROR;
+	}
+	
+	private float getMax(float value1, float value2){
+		if(value1 >= value2)
+			return value1;
+		
+		return value2;
+	}
+	
+	private float getMin(float value1, float value2){
+		if(value1 <= value2)
+			return value1;
+		
+		return value2;
+	}
+	
+	private float[] getCenterPoint(float minX, float maxX, float minY, float maxY, float minZ, float maxZ){
+		float[] center = new float[3];
+		
+		center[0] = Math.abs(maxX - minX) / 2.0f;
+		center[1] = Math.abs(maxY - minY) / 2.0f;
+		center[2] = Math.abs(maxZ - minZ) / 2.0f;
+		
+		return center;
+	}
+	
+	private float computeDiameter(float minX, float maxX, float minY, float maxY, float minZ, float maxZ){
+		float diamX = Math.abs(maxX - minX);
+		float diamY = Math.abs(maxY - minY);
+		float diamZ = Math.abs(maxZ - minZ);
+		
+		float max = getMax(diamX, diamY);
+		max = getMax(max, diamZ);
+		
+		return max;
 	}
 }

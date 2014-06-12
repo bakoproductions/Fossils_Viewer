@@ -65,8 +65,13 @@ public class MTLParser implements MaterialParser{
 					currentMtl.setIllumination(Integer.parseInt(illumination[1]));
 				}else if(line.startsWith("map_Kd")){
 					String[] textureFile = line.split("[ ]+");
+					Log.d("Bako", "Parsing: " + textureFile[1]);
 					currentMtl.setTextureFileName(textureFile[1]);
 				}
+			}
+			
+			for(Material material: materials){
+				Log.d("Bako", "MTL: " + material.getName() + ", file: " + material.getTextureFileName());
 			}
 		} catch (IOException e) {
 			return IO_ERROR;

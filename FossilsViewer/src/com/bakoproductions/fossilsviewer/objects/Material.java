@@ -101,11 +101,11 @@ public class Material {
 		specularColor[2] = b;
 	}
 	
-	public int[] loadTexture(GL10 gl, Context context){
+	/*public int[] loadTexture(GL10 gl, Context context){
 		if(textureFile == null)
 			return null;
 		
-		int resId = getResourceId(textureFile, R.drawable.class);
+		int resId = getResourceId(R.drawable.class);
 
 		if(resId == -1){
 			Log.d("Bako", "Texture not found...");
@@ -121,19 +121,34 @@ public class Material {
 		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
 		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
 		
-		/*gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);*/
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
 		
-		/*int size = bitmap.getRowBytes() * bitmap.getHeight();
+		int size = bitmap.getRowBytes() * bitmap.getHeight();
 		ByteBuffer buffer = ByteBuffer.allocateDirect(size);
 		bitmap.copyPixelsToBuffer(buffer);
-		gl.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap.getWidth(), bitmap.getHeight(), 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_INT, buffer);*/
+		gl.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap.getWidth(), bitmap.getHeight(), 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_INT, buffer);
 		
 		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0);
 
 		bitmap.recycle();
 		
 		return textures;
+	}*/
+	
+	public Bitmap getBitmap(Context context){
+		if(textureFile == null){
+			Log.d("Bako", "MTL: " + name + " has null file...");
+			return null;
+		}
+		int resId = getResourceId(R.drawable.class);
+
+		if(resId == -1){
+			Log.d("Bako", "Texture not found...");
+			return null;
+		}
+		
+		return BitmapFactory.decodeResource(context.getResources(), resId);
 	}
 	
 	public float getAlpha() {
@@ -174,9 +189,9 @@ public class Material {
 		}
 	}
 	
-	private static int getResourceId(String iconName, Class<?> c) {
+	private int getResourceId(Class<?> c) {
 	    try {
-	        Field idField = c.getDeclaredField(iconName);
+	        Field idField = c.getDeclaredField(textureFile);
 	        return idField.getInt(idField);
 	    } catch (Exception e) {
 	        return -1;

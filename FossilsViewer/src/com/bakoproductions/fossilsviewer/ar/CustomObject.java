@@ -32,7 +32,7 @@ public class CustomObject extends ARObject {
 	@Override
 	public void init(GL10 gl) {
 		gl.glEnable(GL10.GL_TEXTURE_2D);
-		model.bindTextures(gl);
+		model.prepareTextures(gl);
 	}
 	
 	@Override

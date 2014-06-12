@@ -28,8 +28,6 @@ public class ViewerActivity extends Activity {
 		if(resultOBJ == ModelParser.RESOURCE_NOT_FOUND_ERROR)
 			return;
 		
-		Log.d("Bako", "model parsed");
-		
 		renderer = new ViewerRenderer(this, model);
 		setContentView(renderer);
 	}

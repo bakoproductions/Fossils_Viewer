@@ -8,6 +8,10 @@ import java.util.Vector;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import com.bakoproductions.fossilsviewer.gestures.RotationDetector;
+import com.bakoproductions.fossilsviewer.gestures.RotationDetector.OnRotationListener;
+import com.bakoproductions.fossilsviewer.gestures.TranslationDetector;
+import com.bakoproductions.fossilsviewer.objects.BoundingSphere;
 import com.bakoproductions.fossilsviewer.objects.Material;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
@@ -20,41 +24,46 @@ import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLU;
 import android.opengl.GLSurfaceView.Renderer;
+import android.util.Log;
+import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 
 public class ViewerRenderer extends GLSurfaceView implements Renderer{
-	private OBJParser objParser;
-	private Context context;
-
 	private Model model;
 	
-	/* Rotation values */
-	private float xrot;					//X Rotation
-	private float yrot = -90.0f;				//Y Rotation
-
-	/* Rotation speed values */
+	private ScaleGestureDetector scaleDetector;
+	private TranslationDetector translationDetector;
+    private RotationDetector rotationDetector;
+    private GestureDetector longClickDetector;
+    
+    /* ====== Touch events parameters ====== */
+    private float scaleFactor;
+	private float posX;
+    private float posY;
+    private float posZ;    
+    private float xrot;
+    private float yrot;
+    /* ===================================== */
 	
-	private float xspeed;				//X Rotation Speed ( NEW )
-	private float yspeed;				//Y Rotation Speed ( NEW )
+	/* = Perspective projection parameters = */
+	private float zNear = 1.0f;
+	private float zFar;
+	/* ===================================== */
 	
-	private float z = 30.0f;
-	
-	private float oldX;
-    private float oldY;
-	private final float TOUCH_SCALE = 0.4f;		//Proved to be good for normal rotation ( NEW )
-	
+	/* ============= Lights ================ */
 	private float[] lightAmbient = {0.8f, 0.8f, 0.8f, 1.0f};
 	private float[] lightDiffuse = {0.8f, 0.8f, 0.8f, 1.0f};
 	private float[] lightPosition = {0.0f, 2.0f, 2.0f, 1.0f};
 	private FloatBuffer lightAmbientBuffer;
 	private FloatBuffer lightDiffuseBuffer;
 	private FloatBuffer lightPositionBuffer;
+	/* ===================================== */
 	
 	public ViewerRenderer(Context context, Model model) {
 		super(context);
-		this.context = context;
-
+	
 		this.model = model;
 		this.setRenderer(this);
 		//this.requestFocus();
@@ -77,6 +86,17 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 		lightPositionBuffer = byteBuf.asFloatBuffer();
 		lightPositionBuffer.put(lightPosition);
 		lightPositionBuffer.position(0);
+		
+		BoundingSphere sphere = model.getSphere();
+		float[] center = sphere.getCenter();
+		posX = center[0];
+		posY = center[1];
+		posZ = center[2] - (2 * sphere.getDiameter());
+		scaleFactor = 1.0f;
+				
+		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
+		translationDetector = new TranslationDetector(new TranslationListener());
+		rotationDetector = new RotationDetector(new RotationListener());
 	}
 
 	@Override
@@ -100,7 +120,7 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 		gl.glEnable(GL10.GL_DEPTH_TEST); 			
 		gl.glDepthFunc(GL10.GL_LEQUAL); 		
 		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
-		model.bindTextures(gl);				
+		model.prepareTextures(gl);
 	}
 
 	@Override
@@ -114,7 +134,11 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 		gl.glLoadIdentity(); 					//Reset The Projection Matrix
 
 		//Calculate The Aspect Ratio Of The Window
-		GLU.gluPerspective(gl, 45.0f, (float)width / (float)height, 0.1f, 500.0f);
+		BoundingSphere sphere = model.getSphere();
+		float diameter = sphere.getDiameter();
+		zFar = zNear + diameter;
+		
+		GLU.gluPerspective(gl, 45.0f, (float)width / (float)height, zNear, zFar + 50.0f);
 
 		gl.glMatrixMode(GL10.GL_MODELVIEW); 	//Select The Modelview Matrix
 		gl.glLoadIdentity(); 
@@ -125,74 +149,63 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 		gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);	
 		
 		gl.glLoadIdentity();					
-		gl.glTranslatef(0.0f, 0.0f, -20.0f);	//Move down 1.2 Unit And Into The Screen 6.0
+		gl.glTranslatef(posX, -posY, posZ); // The Y axis is looking down. Needs a minus.
+		
 		gl.glRotatef(xrot, 1.0f, 0.0f, 0.0f);	//X
 		gl.glRotatef(yrot, 0.0f, 1.0f, 0.0f);	//Y
-		gl.glScalef(5, 5, 5);
+		gl.glScalef(scaleFactor, scaleFactor, scaleFactor);
+		
 		model.draw(gl);						
 		gl.glLoadIdentity();
-		
-		
-		xrot += xspeed;
-		yrot += yspeed;
 	}
 	
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		//
-		float x = event.getX();
-        float y = event.getY();
-        
-        //If a touch is moved on the screen
-        if(event.getAction() == MotionEvent.ACTION_MOVE) {
-        	//Calculate the change
-        	float dx = x - oldX;
-	        float dy = y - oldY;
-        	//Define an upper area of 10% on the screen
-        	int upperArea = this.getHeight() / 10;
-        	
-        	//Zoom in/out if the touch move has been made in the upper
-        	if(y < upperArea) {
-        		z -= dx * TOUCH_SCALE / 2;
-        	
-        	//Rotate around the axis otherwise
-        	} else {        		
-    	        xrot += dy * TOUCH_SCALE;
-    	        yrot += dx * TOUCH_SCALE;
-        	}        
-        
-        //A press on the screen
-        } else if(event.getAction() == MotionEvent.ACTION_UP) {
-
-
-        }
-        
-        //Remember the values
-        oldX = x;
-        oldY = y;
-        
-        //We handled the event
+		rotationDetector.onTouchEvent(event);
+		scaleDetector.onTouchEvent(event);
+		translationDetector.onTouchEvent(event);
 		return true;
 	}
 	
-	@Override
-	public boolean onKeyUp(int keyCode, KeyEvent event) {
-		//
-		if(keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-			
-		} else if(keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-			
-		} else if(keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-			z -= 3;
-			
-		} else if(keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-			z += 3;
-			
-		} else if(keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-
+	private class TranslationListener implements TranslationDetector.OnTranslationListener{
+		@Override
+		public void onTranslation(TranslationDetector translationDetector, float x, float y) {
+			//if(!scaleDetector.isInProgress()){
+				final float dx = x - translationDetector.getLastTouchX();
+				final float dy = y - translationDetector.getLastTouchY();
+				
+				posX += dx/100;
+				posY += dy/100;
+				
+				invalidate();
+			//}
 		}
+	}
+	
+	private class RotationListener implements RotationDetector.OnRotationListener{
+		@Override
+		public void onRotation(RotationDetector rotationDetector, float x, float y) {
+			//if(!scaleDetector.isInProgress()){
+				final float dx = x - rotationDetector.getLastTouchX();
+				final float dy = y - rotationDetector.getLastTouchY();
+				
+				xrot += dy * RotationDetector.ROTATION_SCALE;
+				yrot += dx * RotationDetector.ROTATION_SCALE;
+				
+				invalidate();
+			//}
+		}
+	}
+	
+	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+	    @Override
+	    public boolean onScale(ScaleGestureDetector detector) {
+	        scaleFactor *= detector.getScaleFactor();
+	        
+	        scaleFactor = Math.max(0.1f, Math.min(scaleFactor, 5.0f));
 
-		//We handled the event
-		return true;
+	        invalidate();
+	        return true;
+	    }
 	}
 }
