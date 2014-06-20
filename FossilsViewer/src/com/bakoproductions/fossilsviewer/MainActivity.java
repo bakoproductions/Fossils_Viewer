@@ -27,7 +27,7 @@ import android.view.ViewGroup;
 import android.os.Build;
 
 public class MainActivity extends Activity {
-	int chooser = 1;
+	int chooser = 0;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {

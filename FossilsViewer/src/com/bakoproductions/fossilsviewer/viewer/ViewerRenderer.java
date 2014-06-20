@@ -36,7 +36,6 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 	private ScaleGestureDetector scaleDetector;
 	private TranslationDetector translationDetector;
     private RotationDetector rotationDetector;
-    private GestureDetector longClickDetector;
     
     /* ====== Touch events parameters ====== */
     private float scaleFactor;

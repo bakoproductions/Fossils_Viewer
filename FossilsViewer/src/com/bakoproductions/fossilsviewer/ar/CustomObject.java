@@ -1,23 +1,10 @@
 package com.bakoproductions.fossilsviewer.ar;
 
-import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-
 import javax.microedition.khronos.opengles.GL10;
 
-import android.content.Context;
-import android.util.Log;
-
 import com.bakoproductions.fossilsviewer.objects.Model;
-import com.bakoproductions.fossilsviewer.parsers.ModelParser;
-import com.bakoproductions.fossilsviewer.parsers.OBJParser;
 
 import edu.dhbw.andar.ARObject;
-import edu.dhbw.andar.pub.SimpleBox;
-import edu.dhbw.andar.util.GraphicsUtil;
 
 public class CustomObject extends ARObject {
 	private Model model;

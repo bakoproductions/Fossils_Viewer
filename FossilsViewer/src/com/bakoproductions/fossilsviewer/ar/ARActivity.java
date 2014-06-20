@@ -50,7 +50,7 @@ public class ARActivity extends AndARActivity {
 		
 		try {
 			artoolkit = super.getArtoolkit();
-			someObject = new CustomObject("test", "patt.hiro", 80.0, new double[]{0,0}, model);
+			someObject = new CustomObject("test", "android.patt", 80.0, new double[]{0,0}, model);
 			artoolkit.registerARObject(someObject);
 		} catch (AndARException e) {
 			e.printStackTrace();
