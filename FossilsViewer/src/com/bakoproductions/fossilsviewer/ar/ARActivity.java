@@ -1,7 +1,8 @@
 package com.bakoproductions.fossilsviewer.ar;
 
-import com.bakoproductions.fossilsviewer.ar.CustomObject;
-import com.bakoproductions.fossilsviewer.ar.ARRenderer;
+import android.os.Bundle;
+import android.util.Log;
+
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.parsers.ModelParser;
 import com.bakoproductions.fossilsviewer.parsers.OBJParser;
@@ -9,18 +10,6 @@ import com.bakoproductions.fossilsviewer.parsers.OBJParser;
 import edu.dhbw.andar.ARToolkit;
 import edu.dhbw.andar.AndARActivity;
 import edu.dhbw.andar.exceptions.AndARException;
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.support.v4.app.Fragment;
-import android.opengl.GLSurfaceView;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.os.Build;
 
 public class ARActivity extends AndARActivity {
 	CustomObject someObject;

@@ -47,14 +47,14 @@ public class OBJParser implements ModelParser {
 		Vector<Material> materials = new Vector<Material>();
 		
 		Material currentMtl = null;
-		float minX = 0;
-		float maxX = 0;
+		float minX = -10;
+		float maxX = 10;
 		
-		float minY = 0;
-		float maxY = 0;
+		float minY = -10;
+		float maxY = 10;
 		
-		float minZ = 0;
-		float maxZ = 0;
+		float minZ = -10;
+		float maxZ = 10;
 		try {
 			HashMap<String, Short> uniqueFaces = new HashMap<String, Short>();
 			Short nextIndex = 0;
@@ -64,6 +64,8 @@ public class OBJParser implements ModelParser {
 			
 			String line;			
 			while((line = br.readLine()) != null){
+				line = line.replaceFirst("^\\s+", "");
+				
 				//Log.d("Bako", line);
 				if(line.startsWith("vn")){
 					//Log.d("Bako", "vn");

@@ -1,48 +1,70 @@
 package com.bakoproductions.fossilsviewer;
 
-import com.bakoproductions.fossilsviewer.ar.ARActivity;
-import com.bakoproductions.fossilsviewer.ar.CustomObject;
-import com.bakoproductions.fossilsviewer.ar.ARRenderer;
-import com.bakoproductions.fossilsviewer.objects.Model;
-import com.bakoproductions.fossilsviewer.parsers.ModelParser;
-import com.bakoproductions.fossilsviewer.parsers.OBJParser;
-import com.bakoproductions.fossilsviewer.viewer.ViewerActivity;
+import java.util.ArrayList;
 
-import edu.dhbw.andar.ARToolkit;
-import edu.dhbw.andar.AndARActivity;
-import edu.dhbw.andar.exceptions.AndARException;
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.support.v4.app.Fragment;
 import android.app.Activity;
 import android.content.Intent;
-import android.opengl.GLSurfaceView;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.os.Build;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ListView;
+
+import com.bakoproductions.fossilsviewer.adapters.ListAdapter;
+import com.bakoproductions.fossilsviewer.util.AssetsInfo;
+import com.bakoproductions.fossilsviewer.util.AssetsReader;
+import com.bakoproductions.fossilsviewer.viewer.ViewerActivity;
 
 public class MainActivity extends Activity {
-	int chooser = 0;
+	public static final String ROOT_FOLDER_PATH = "objects";
+	private ListView list;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-
-		String file = "iphone.obj";
 		
-		Intent intent;
-		if(chooser == 0){
-			intent = new Intent(this, ARActivity.class);
-		}else{
-			intent = new Intent(this, ViewerActivity.class);
+		AssetsLoader loader = new AssetsLoader();
+		loader.execute(ROOT_FOLDER_PATH);
+	}
+	
+	private class AssetsLoader extends AsyncTask<String, Void, Void> {
+		private AssetsReader reader;
+		private ListAdapter adapter;
+		
+		@Override
+		protected void onPreExecute() {
+			list = (ListView) findViewById(R.id.list);
+			list.setOnItemClickListener(new OnItemClicked());
+			
+			reader = new AssetsReader(getApplicationContext());
+			super.onPreExecute();
 		}
-		intent.putExtra("file", file);
-		startActivity(intent);
+		
+		@Override
+		protected Void doInBackground(String... paths) {
+			ArrayList<AssetsInfo> info = reader.getFiles(paths[0]);
+			adapter = new ListAdapter(getApplicationContext(), info);
+			return null;
+		}
+		
+		@Override
+		protected void onPostExecute(Void result) {
+			list.setAdapter(adapter);
+			super.onPostExecute(result);
+		}
+	}
+	
+	private class OnItemClicked implements OnItemClickListener {
+
+		@Override
+		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+			Intent intent = new Intent(MainActivity.this, ViewerActivity.class);
+			
+			AssetsInfo info = (AssetsInfo) parent.getItemAtPosition(position);
+			intent.putExtra("file", info.getObjFilePath());
+			startActivity(intent);
+		}
 	}
 }

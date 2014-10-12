@@ -32,6 +32,8 @@ public class MTLParser implements MaterialParser{
 			String line;
 			Material currentMtl = null;
 			while((line = br.readLine()) != null){
+				line = line.replaceFirst("^\\s+", "");
+
 				if(line.startsWith("newmtl")){
 					String materialName = line.split("[ ]+",2)[1];
 					currentMtl = new Material(materialName);
@@ -65,7 +67,7 @@ public class MTLParser implements MaterialParser{
 					currentMtl.setIllumination(Integer.parseInt(illumination[1]));
 				}else if(line.startsWith("map_Kd")){
 					String[] textureFile = line.split("[ ]+");
-					currentMtl.setTextureFileName(textureFile[1]);
+					currentMtl.setTextureFileName(textureFile[1]);					
 				}
 			}
 		} catch (IOException e) {

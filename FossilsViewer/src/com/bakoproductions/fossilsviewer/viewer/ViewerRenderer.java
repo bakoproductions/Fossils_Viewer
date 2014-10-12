@@ -154,7 +154,7 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 		gl.glRotatef(yrot, 0.0f, 1.0f, 0.0f);	//Y
 		gl.glScalef(scaleFactor, scaleFactor, scaleFactor);
 		
-		model.draw(gl);						
+		model.draw(gl);
 		gl.glLoadIdentity();
 	}
 	

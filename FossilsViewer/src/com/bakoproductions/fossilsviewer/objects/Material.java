@@ -1,20 +1,18 @@
 package com.bakoproductions.fossilsviewer.objects;
 
+import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
+
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-import javax.microedition.khronos.opengles.GL10;
-
-import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
-import com.bakoproductions.fossilsviewer.R;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.opengl.GLUtils;
 import android.util.Log;
+
+import com.bakoproductions.fossilsviewer.R;
 
 
 public class Material {
