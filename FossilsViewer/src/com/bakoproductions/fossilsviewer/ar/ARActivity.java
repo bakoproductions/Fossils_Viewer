@@ -22,9 +22,13 @@ public class ARActivity extends AndARActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		String file = (String) getIntent().getExtras().get("file");
+		Bundle extras = getIntent().getExtras();
+		
+		String parentPath = extras.getString("path");
+		String file = extras.getString("file");
+		
 		model = new Model(this);
-		objParser = new OBJParser(this, file);
+		objParser = new OBJParser(this, parentPath, file);
 		int resultOBJ = objParser.parse(model);
 		
 		if(resultOBJ == ModelParser.IO_ERROR)

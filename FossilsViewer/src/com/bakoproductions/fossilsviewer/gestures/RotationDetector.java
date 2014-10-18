@@ -2,9 +2,6 @@ package com.bakoproductions.fossilsviewer.gestures;
 
 import java.util.HashMap;
 
-import com.bakoproductions.fossilsviewer.util.Globals;
-
-import android.util.Log;
 import android.view.MotionEvent;
 
 public class RotationDetector {
@@ -63,7 +60,6 @@ public class RotationDetector {
 				lastTouchY = (lastTouchY + position[1]) / 2.0f;
 				
 				activePointers.put(pointerId, position);
-				Log.d("Bako", "p down " + position[0] + " " + position[1]);
 				break;
 			} case MotionEvent.ACTION_MOVE: {
 				if(activePointers.size() != 3)
@@ -106,7 +102,6 @@ public class RotationDetector {
 		        break;
 			}
 		}
-    	Log.d("Bako", "Last " + lastTouchX + " " + lastTouchY);
 		return true;
 	}
 	

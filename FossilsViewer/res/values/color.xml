@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- General -->
+    <color name="Background">#F0F0F0</color>
+    <color name="BackgroundFocused">#E6E6E6</color>
+    
+    <!-- ActionBar Colors -->
+    <color name="ActionBar">#5DC6C1</color>
+    <color name="ActionBarTitle">#F4F8FF</color>
+    
+    <!-- ListView colors -->
+    <color name="ObjectName">#000000</color>
+    <color name="ObjectSize">#888888</color>
+    <color name="ListDivider">#d9d9d9</color>
+    <color name="ListRowStartColor">#ABCABC</color>
+    <color name="ListRowEndColor">#ffffff</color>
+    <color name="ListRowHoverStartColor">#ebeef0</color>
+    <color name="ListRowHoverEndColor">#ebeef0</color>
+</resources>

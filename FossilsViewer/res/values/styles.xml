@@ -1,20 +1,43 @@
-<resources>
+<resources 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" >
+    
+    <style name="AppTheme" parent="Theme.Sherlock.Light">
+        <item name="actionBarStyle">@style/ActionBar</item>
+        <item name="android:actionBarStyle" tools:targetApi="11">@style/ActionBar</item>
 
-    <!--
-        Base application theme, dependent on API level. This theme is replaced
-        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
-    -->
-    <style name="AppBaseTheme" parent="@android:style/Theme.Holo.Light">
-        <!--
-            Theme customizations available in newer API levels can go in
-            res/values-vXX/styles.xml, while customizations related to
-            backward-compatibility can go here.
-        -->
+		<item name="android:listViewStyle">@style/ListViewSt</item>
     </style>
-
-    <!-- Application theme. -->
-    <style name="AppTheme" parent="AppBaseTheme">
-        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+	
+    <!-- Action Bar Styles -->
+    <style name="ActionBar" parent="Widget.Sherlock.ActionBar">
+        <item name="android:background">@color/ActionBar</item>
+    	<item name="background">@color/ActionBar</item>
+    	
+    	<item name="titleTextStyle">@style/ActionBarTitle</item>
+		<item name="android:titleTextStyle" tools:targetApi="11">@style/ActionBarTitle</item>
     </style>
-
+    
+    <style name="ActionBarTitle" parent="TextAppearance.Sherlock.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/ActionBarTitle</item>
+    	<item name="android:textSize">18sp</item>
+    </style>
+    
+    <!-- List View Styles -->
+    <style name="ListViewSt" parent="@android:style/Widget.ListView" >
+        <item name="android:divider">@color/ListDivider</item>
+        <item name="android:dividerHeight">1dp</item>
+        
+        <item name="android:listSelector">@drawable/list_selector</item>
+    </style>
+    
+    <style name="ListViewTitleText" parent="@android:style/TextAppearance.Small">
+        <item name="android:textColor">@color/ObjectName</item>
+        <item name="android:textSize">@dimen/ObjectName</item>
+    </style>
+    
+    <style name="ListViewSizeText" parent="@android:style/TextAppearance.Small">
+        <item name="android:textColor">@color/ObjectSize</item>
+        <item name="android:textSize">@dimen/ObjectSize</item>
+    </style>
 </resources>

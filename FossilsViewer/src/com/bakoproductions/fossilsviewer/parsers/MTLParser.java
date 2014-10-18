@@ -4,23 +4,21 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Vector;
 
 import android.content.Context;
-import android.content.res.Resources;
-import android.util.Log;
 
 import com.bakoproductions.fossilsviewer.objects.Material;
-import com.bakoproductions.fossilsviewer.objects.Model;
 
 public class MTLParser implements MaterialParser{
 	private Context context;
 	private String mtlFile;
+	private String parentPath;
 	
-	public MTLParser(Context context, String mtlFile){
+	public MTLParser(Context context, String parentPath, String mtlFile){
 		this.context = context;
 		this.mtlFile = mtlFile;
+		this.parentPath = parentPath;
 	}
 
 	@Override
@@ -67,14 +65,12 @@ public class MTLParser implements MaterialParser{
 					currentMtl.setIllumination(Integer.parseInt(illumination[1]));
 				}else if(line.startsWith("map_Kd")){
 					String[] textureFile = line.split("[ ]+");
-					currentMtl.setTextureFileName(textureFile[1]);					
+					currentMtl.setTextureFileName(parentPath + "/" + textureFile[1]);					
 				}
 			}
 		} catch (IOException e) {
 			return IO_ERROR;
-		} catch (Resources.NotFoundException nfe) {
-			return RESOURCE_NOT_FOUND_ERROR;
-		}
+		} 
 		return NO_ERROR;
 	}
 

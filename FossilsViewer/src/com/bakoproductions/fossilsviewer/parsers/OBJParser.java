@@ -1,16 +1,13 @@
 package com.bakoproductions.fossilsviewer.parsers;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream.GetField;
 import java.util.HashMap;
 import java.util.Vector;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.util.Log;
 
 import com.bakoproductions.fossilsviewer.objects.BoundingSphere;
@@ -20,15 +17,17 @@ import com.bakoproductions.fossilsviewer.objects.ModelPart;
 import com.bakoproductions.fossilsviewer.util.Triangulator;
 import com.bakoproductions.fossilsviewer.util.Util;
 
-import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;;
-
 public class OBJParser implements ModelParser {
+	private static final String TAG = OBJParser.class.getSimpleName();
+	
 	private Context context;
+	private String parentPath;
 	private String objFile;
 	private MTLParser mtlParser;
 	
-	public OBJParser(Context context, String objFile){
+	public OBJParser(Context context, String parentPath, String objFile){
 		this.context = context;
+		this.parentPath = parentPath;
 		this.objFile = objFile;
 	}
 	
@@ -47,25 +46,24 @@ public class OBJParser implements ModelParser {
 		Vector<Material> materials = new Vector<Material>();
 		
 		Material currentMtl = null;
-		float minX = -10;
-		float maxX = 10;
+		float minX = 100000;
+		float maxX = -100000;
 		
-		float minY = -10;
-		float maxY = 10;
+		float minY = 100000;
+		float maxY = -100000;
 		
-		float minZ = -10;
-		float maxZ = 10;
+		float minZ = 100000;
+		float maxZ = -100000;
 		try {
 			HashMap<String, Short> uniqueFaces = new HashMap<String, Short>();
 			Short nextIndex = 0;
 			
-			InputStream inputStream = context.getAssets().open(objFile);
+			InputStream inputStream = context.getAssets().open(objFile);				
 			BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 			
 			String line;			
 			while((line = br.readLine()) != null){
 				line = line.replaceFirst("^\\s+", "");
-				
 				//Log.d("Bako", line);
 				if(line.startsWith("vn")){
 					//Log.d("Bako", "vn");
@@ -143,11 +141,13 @@ public class OBJParser implements ModelParser {
 				}else if(line.startsWith("mtllib")){
 					// start parsing the mtl file
 					String mtlFile = line.split("[ ]+",2)[1];
-					mtlParser = new MTLParser(context, mtlFile);
+					
+					mtlFile = parentPath + "/" + mtlFile;
+					mtlParser = new MTLParser(context, parentPath, mtlFile);
 					int result = mtlParser.parse(materials);
 					
-					if(result != MaterialParser.NO_ERROR)
-						return result;
+					if(result == MaterialParser.IO_ERROR)
+						Log.d(TAG, "Could not open material file: " + mtlFile);
 				}else if(line.startsWith("usemtl")){
 					if(faces.size() != 0){
 						ModelPart modelPart = new ModelPart(faces, texturePointers, normalPointers, currentMtl);
@@ -173,8 +173,6 @@ public class OBJParser implements ModelParser {
 			}
 		} catch (IOException e) {
 			return IO_ERROR;
-		} catch (Resources.NotFoundException nfe) {
-			return RESOURCE_NOT_FOUND_ERROR;
 		}
 		
 		if(faces.size() != 0){
@@ -193,7 +191,10 @@ public class OBJParser implements ModelParser {
 		
 		// Create an imaginary sphere around the model
 		float[] center = getCenterPoint(minX, maxX, minY, maxY, minZ, maxZ);
-		float diameter = computeDiameter(minX, maxX, minY, maxY, minZ, maxZ);
+		float diameter = computeDiameter(center, vertices);
+		
+		Log.d("Bako", "Centroid: " + center[0] + ", " + center[1] + ", " + center[2]);
+		Log.d("Bako", "Diameter: " + diameter);
 		
 		BoundingSphere sphere = new BoundingSphere(center, diameter);
 		model.applyBoundingSphere(sphere);
@@ -225,6 +226,25 @@ public class OBJParser implements ModelParser {
 		return center;
 	}
 	
+	private float computeDiameter(float[] center, Vector<Float> vertices){
+		float max = -100000000;
+		
+		for(int i = 0; i < vertices.size() - 2; i += 3) {
+			float[] point = new float[3];
+			
+			point[0] = vertices.get(i);
+			point[1] = vertices.get(i + 1);
+			point[2] = vertices.get(i + 2);
+			
+			float distance = euclideanDistance(center, point);
+			
+			if(distance > max)
+				max = distance;
+		}
+		
+		return 2 * max;
+	}
+	
 	private float computeDiameter(float minX, float maxX, float minY, float maxY, float minZ, float maxZ){
 		float diamX = Math.abs(maxX - minX);
 		float diamY = Math.abs(maxY - minY);
@@ -234,5 +254,13 @@ public class OBJParser implements ModelParser {
 		max = getMax(max, diamZ);
 		
 		return max;
+	}
+	
+	private float euclideanDistance(float[] center, float[] point) {
+		double sum = Math.pow(center[0] - point[0], 2);
+		sum += Math.pow(center[1] - point[1], 2);
+		sum += Math.pow(center[2] - point[2], 2);
+		
+		return (float) Math.sqrt(sum);
 	}
 }

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content" >
+    android:layout_height="wrap_content"
+    android:layout_margin="5dp" >
 
     <FrameLayout
         android:id="@+id/thumbFrame"
@@ -11,9 +12,10 @@
 
         <ImageView
             android:id="@+id/thumb"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_launcher" />
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_default_thumb" />
 
     </FrameLayout>
 
@@ -24,7 +26,8 @@
         android:layout_centerVertical="true"
         android:layout_marginLeft="5dp"
         android:layout_toRightOf="@id/thumbFrame"
-        android:text="TextView" />
+        android:text="TextView"
+        android:textAppearance="@style/ListViewTitleText" />
 
     <TextView
         android:id="@+id/objectSize"
@@ -33,6 +36,7 @@
         android:layout_alignBottom="@id/thumbFrame"
         android:layout_alignParentRight="true"
         android:layout_marginRight="5dp"
-        android:text="TextView" />
+        android:text="TextView"
+        android:textAppearance="@style/ListViewSizeText" />
 
 </RelativeLayout>

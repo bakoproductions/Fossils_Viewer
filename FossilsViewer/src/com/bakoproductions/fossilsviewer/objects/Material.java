@@ -2,12 +2,15 @@ package com.bakoproductions.fossilsviewer.objects;
 
 import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
@@ -99,54 +102,21 @@ public class Material {
 		specularColor[2] = b;
 	}
 	
-	/*public int[] loadTexture(GL10 gl, Context context){
-		if(textureFile == null)
-			return null;
-		
-		int resId = getResourceId(R.drawable.class);
-
-		if(resId == -1){
-			Log.d("Bako", "Texture not found...");
-			return null;
-		}
-		
-		Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), resId);
-		
-		int[] textures = new int[1];
-		gl.glGenTextures(1, textures, 0);
-		gl.glBindTexture(GL10.GL_TEXTURE_2D, textures[0]);
-		
-		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
-		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-		
-		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-		gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
-		
-		int size = bitmap.getRowBytes() * bitmap.getHeight();
-		ByteBuffer buffer = ByteBuffer.allocateDirect(size);
-		bitmap.copyPixelsToBuffer(buffer);
-		gl.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap.getWidth(), bitmap.getHeight(), 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_INT, buffer);
-		
-		GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0);
-
-		bitmap.recycle();
-		
-		return textures;
-	}*/
-	
 	public Bitmap getBitmap(Context context){
 		if(textureFile == null){
-			Log.d("Bako", "MTL: " + name + " has null file...");
-			return null;
-		}
-		int resId = getResourceId(R.drawable.class);
-
-		if(resId == -1){
-			Log.d("Bako", "Texture not found...");
 			return null;
 		}
 		
-		return BitmapFactory.decodeResource(context.getResources(), resId);
+		Log.d("Bako", textureFile);
+		AssetManager assets = context.getAssets();
+		
+		try {
+			InputStream is = assets.open(textureFile);
+			return BitmapFactory.decodeStream(is);
+		} catch (IOException e) {
+			Log.d("Bako", "einai null");
+			return null;
+		}
 	}
 	
 	public float getAlpha() {
@@ -178,13 +148,7 @@ public class Material {
 	}
 
 	public void setTextureFileName(String textureFile) {
-		// Remove suffix from file name
-		int dotIndex = textureFile.indexOf('.');
-		if(dotIndex != -1){
-			this.textureFile = textureFile.substring(0, dotIndex);
-		}else{
-			this.textureFile = textureFile;
-		}
+		this.textureFile = textureFile; 
 	}
 	
 	private int getResourceId(Class<?> c) {

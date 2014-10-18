@@ -6,10 +6,15 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 
 import com.bakoproductions.fossilsviewer.adapters.ListAdapter;
 import com.bakoproductions.fossilsviewer.util.AssetsInfo;
@@ -32,11 +37,16 @@ public class MainActivity extends Activity {
 	private class AssetsLoader extends AsyncTask<String, Void, Void> {
 		private AssetsReader reader;
 		private ListAdapter adapter;
+		private LinearLayout progressLayout;
 		
 		@Override
 		protected void onPreExecute() {
 			list = (ListView) findViewById(R.id.list);
 			list.setOnItemClickListener(new OnItemClicked());
+			
+			progressLayout = (LinearLayout) findViewById(R.id.progressViewerLayout);
+			progressLayout.setVisibility(View.VISIBLE);
+			list.setVisibility(View.INVISIBLE);
 			
 			reader = new AssetsReader(getApplicationContext());
 			super.onPreExecute();
@@ -51,7 +61,9 @@ public class MainActivity extends Activity {
 		
 		@Override
 		protected void onPostExecute(Void result) {
+			progressLayout.setVisibility(View.GONE);
 			list.setAdapter(adapter);
+			list.setVisibility(View.VISIBLE);
 			super.onPostExecute(result);
 		}
 	}
@@ -63,6 +75,7 @@ public class MainActivity extends Activity {
 			Intent intent = new Intent(MainActivity.this, ViewerActivity.class);
 			
 			AssetsInfo info = (AssetsInfo) parent.getItemAtPosition(position);
+			intent.putExtra("path", info.getParentPath());
 			intent.putExtra("file", info.getObjFilePath());
 			startActivity(intent);
 		}

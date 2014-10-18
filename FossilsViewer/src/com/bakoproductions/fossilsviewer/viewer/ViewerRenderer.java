@@ -32,22 +32,25 @@ import android.view.ScaleGestureDetector;
 
 public class ViewerRenderer extends GLSurfaceView implements Renderer{
 	private Model model;
+	private Context context;
 	
 	private ScaleGestureDetector scaleDetector;
 	private TranslationDetector translationDetector;
     private RotationDetector rotationDetector;
     
+    private float posX = 0.0f;
+    private float posY = 0.0f;
     /* ====== Touch events parameters ====== */
-    private float scaleFactor;
-	private float posX;
-    private float posY;
-    private float posZ;    
-    private float xrot;
-    private float yrot;
+    private float scaleFactor = 1.0f;
+	
+    private float transX = 0.0f;
+    private float transY = 0.0f;
+    private float rotX = 0.0f;
+    private float rotY = 0.0f;
     /* ===================================== */
 	
 	/* = Perspective projection parameters = */
-	private float zNear = 1.0f;
+	private float zNear = 0.1f;
 	private float zFar;
 	/* ===================================== */
 	
@@ -59,6 +62,31 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 	private FloatBuffer lightDiffuseBuffer;
 	private FloatBuffer lightPositionBuffer;
 	/* ===================================== */
+	
+	public ViewerRenderer(Context context) {
+		super(context);
+		
+		this.context = context;
+		this.setRenderer(this);
+		
+		ByteBuffer byteBuf = ByteBuffer.allocateDirect(lightAmbient.length * BYTES_PER_FLOAT);
+		byteBuf.order(ByteOrder.nativeOrder());
+		lightAmbientBuffer = byteBuf.asFloatBuffer();
+		lightAmbientBuffer.put(lightAmbient);
+		lightAmbientBuffer.position(0);
+		
+		byteBuf = ByteBuffer.allocateDirect(lightDiffuse.length * BYTES_PER_FLOAT);
+		byteBuf.order(ByteOrder.nativeOrder());
+		lightDiffuseBuffer = byteBuf.asFloatBuffer();
+		lightDiffuseBuffer.put(lightDiffuse);
+		lightDiffuseBuffer.position(0);
+		
+		byteBuf = ByteBuffer.allocateDirect(lightPosition.length * BYTES_PER_FLOAT);
+		byteBuf.order(ByteOrder.nativeOrder());
+		lightPositionBuffer = byteBuf.asFloatBuffer();
+		lightPositionBuffer.put(lightPosition);
+		lightPositionBuffer.position(0);
+	}
 	
 	public ViewerRenderer(Context context, Model model) {
 		super(context);
@@ -85,13 +113,6 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 		lightPositionBuffer = byteBuf.asFloatBuffer();
 		lightPositionBuffer.put(lightPosition);
 		lightPositionBuffer.position(0);
-		
-		BoundingSphere sphere = model.getSphere();
-		float[] center = sphere.getCenter();
-		posX = center[0];
-		posY = center[1];
-		posZ = center[2] - (2 * sphere.getDiameter());
-		scaleFactor = 1.0f;
 				
 		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 		translationDetector = new TranslationDetector(new TranslationListener());
@@ -137,25 +158,42 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 		float diameter = sphere.getDiameter();
 		zFar = zNear + diameter;
 		
-		GLU.gluPerspective(gl, 45.0f, (float)width / (float)height, zNear, zFar + 50.0f);
-
+		GLU.gluPerspective(gl, 45.0f, (float)width / (float)height, zNear, zFar*5.0f);
+		//gl.glFrustumf(-width, width, -height, height, zNear, zFar+50.0f);
+		
 		gl.glMatrixMode(GL10.GL_MODELVIEW); 	//Select The Modelview Matrix
 		gl.glLoadIdentity(); 
 	}
 
 	@Override
-	public void onDrawFrame(GL10 gl) {
-		gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);	
+	public void onDrawFrame(GL10 gl) {		
+		BoundingSphere sphere = model.getSphere();
+		float[] center = sphere.getCenter();
 		
+		gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+		gl.glMatrixMode(GL10.GL_MODELVIEW);
 		gl.glLoadIdentity();					
-		gl.glTranslatef(posX, -posY, posZ); // The Y axis is looking down. Needs a minus.
 		
-		gl.glRotatef(xrot, 1.0f, 0.0f, 0.0f);	//X
-		gl.glRotatef(yrot, 0.0f, 1.0f, 0.0f);	//Y
+		gl.glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
+		GLU.gluLookAt(gl, 0, 0, sphere.getDiameter(), 0, 0, 0, 0.0f, 1.0f, 0.0f);
+		//gl.glPushMatrix();
+		
+		
 		gl.glScalef(scaleFactor, scaleFactor, scaleFactor);
 		
+		gl.glTranslatef(-posX , -posY , 0);
+		
+		gl.glRotatef(rotX, 1, 0, 0);
+		gl.glRotatef(rotY, 0, 1, 0);
+		
+		gl.glTranslatef(posX, posY, 0);
+		
 		model.draw(gl);
+		//gl.glPopMatrix();
 		gl.glLoadIdentity();
+		
+		posX += transX;
+		posY += transY;
 	}
 	
 	@Override
@@ -169,30 +207,30 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer{
 	private class TranslationListener implements TranslationDetector.OnTranslationListener{
 		@Override
 		public void onTranslation(TranslationDetector translationDetector, float x, float y) {
-			//if(!scaleDetector.isInProgress()){
+			if(!scaleDetector.isInProgress()){
 				final float dx = x - translationDetector.getLastTouchX();
 				final float dy = y - translationDetector.getLastTouchY();
 				
-				posX += dx/100;
-				posY += dy/100;
+				transX += dx/100;
+				transY -= dy/100;
 				
 				invalidate();
-			//}
+			}
 		}
 	}
 	
 	private class RotationListener implements RotationDetector.OnRotationListener{
 		@Override
 		public void onRotation(RotationDetector rotationDetector, float x, float y) {
-			//if(!scaleDetector.isInProgress()){
+			if(!scaleDetector.isInProgress()){
 				final float dx = x - rotationDetector.getLastTouchX();
 				final float dy = y - rotationDetector.getLastTouchY();
 				
-				xrot += dy * RotationDetector.ROTATION_SCALE;
-				yrot += dx * RotationDetector.ROTATION_SCALE;
+				rotX += dy * RotationDetector.ROTATION_SCALE;
+				rotY += dx * RotationDetector.ROTATION_SCALE;
 				
 				invalidate();
-			//}
+			}
 		}
 	}
 	

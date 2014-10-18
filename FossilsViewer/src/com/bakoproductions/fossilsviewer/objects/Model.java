@@ -38,15 +38,6 @@ public class Model {
 		this.textures = textures;
 	}
 	
-	/*public void bindTextures(GL10 gl){
-		for(ModelPart part: parts){
-			Material material = part.getMaterial();
-			if(material != null){
-				bindedTextures = material.loadTexture(gl, context);
-			}
-		}
-	}*/
-	
 	public void prepareTextures(GL10 gl){
 		Material[] materials = new Material[parts.size()];
 		

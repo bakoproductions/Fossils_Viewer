@@ -3,6 +3,7 @@ package com.bakoproductions.fossilsviewer.util;
 import android.graphics.Bitmap;
 
 public class AssetsInfo {
+	private String parentPath;
 	private Bitmap thumb;
 	private String folderName;
 	private int folderSize;
@@ -18,6 +19,14 @@ public class AssetsInfo {
 		this.folderName = folderName;
 		this.folderSize = folderSize;
 		this.objFilePath = objFilePath;
+	}
+	
+	public void setParentPath(String parentPath) {
+		this.parentPath = parentPath;
+	}
+	
+	public String getParentPath() {
+		return parentPath;
 	}
 	
 	public void setThumb(Bitmap thumb) {

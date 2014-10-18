@@ -39,6 +39,7 @@ public class AssetsReader {
 					currentInfo = new AssetsInfo();
 					info.add(currentInfo);
 					
+					currentInfo.setParentPath(path);
 					String[] name = path.split("/");
 					currentInfo.setFolderName(name[name.length - 1]);
 				}

@@ -1,6 +1,5 @@
 package com.bakoproductions.fossilsviewer.gestures;
 
-import android.util.Log;
 import android.view.MotionEvent;
 
 import com.bakoproductions.fossilsviewer.util.Globals;
