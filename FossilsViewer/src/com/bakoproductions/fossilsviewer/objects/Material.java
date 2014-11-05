@@ -4,7 +4,6 @@ import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -13,22 +12,21 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 
-import com.bakoproductions.fossilsviewer.R;
-
-
-public class Material {
-	String name;
-	String textureFile;
+public class Material implements Parcelable{
+	private String name;
+	private String textureFile;
 	
-	float[] ambientColor;
-	float[] diffuseColor;
-	float[] specularColor;
+	private float[] ambientColor;
+	private float[] diffuseColor;
+	private float[] specularColor;
 	
-	float alpha;
-	float shine;
-	int illumination;
+	private float alpha;
+	private float shine;
+	private int illumination;
 	
 	public Material(String name){
 		this.name=name;
@@ -151,13 +149,41 @@ public class Material {
 		this.textureFile = textureFile; 
 	}
 	
-	private int getResourceId(Class<?> c) {
-	    try {
-	        Field idField = c.getDeclaredField(textureFile);
-	        return idField.getInt(idField);
-	    } catch (Exception e) {
-	        return -1;
-	    } 
+	public static final Parcelable.Creator<Material> CREATOR = new Parcelable.Creator<Material>() {
+        public Material createFromParcel(Parcel pc) {
+            return new Material(pc);
+        }
+        public Material[] newArray(int size) {
+            return new Material[size];
+        }
+	};
+	
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeString(name);
+		dest.writeString(textureFile);
+		dest.writeFloatArray(ambientColor);
+		dest.writeFloatArray(diffuseColor);
+		dest.writeFloatArray(specularColor);
+		dest.writeFloat(alpha);
+		dest.writeFloat(shine);
+		dest.writeInt(illumination);
+	}
+	
+	public Material(Parcel parcel) {
+		this.name = parcel.readString();
+		this.textureFile = parcel.readString();
+		this.ambientColor = parcel.createFloatArray();
+		this.diffuseColor = parcel.createFloatArray();
+		this.specularColor = parcel.createFloatArray();
+		this.alpha = parcel.readFloat();
+		this.shine = parcel.readFloat();
+		this.illumination = parcel.readInt();
 	}
 }
 

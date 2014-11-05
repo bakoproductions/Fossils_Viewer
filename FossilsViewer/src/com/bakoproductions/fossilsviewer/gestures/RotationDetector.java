@@ -6,8 +6,6 @@ import android.view.MotionEvent;
 
 public class RotationDetector {
 	public static final float ROTATION_SCALE = 0.4f;
-	private float xrot;
-	private float yrot;
 	
 	private float lastTouchX;
     private float lastTouchY;
@@ -15,17 +13,14 @@ public class RotationDetector {
     private HashMap<Integer, float[]> activePointers;
 	
 	private OnRotationListener listener;
-	private int activePointerId;
+	private boolean inProgress;
 	
 	public RotationDetector(OnRotationListener listener){
 		this.listener = listener;
 		activePointers = new HashMap<Integer, float[]>();
+		inProgress = false;
 	}
 	
-	public void setRotationValues(float xrot, float yrot){
-		this.xrot = xrot;
-		this.yrot = yrot;
-	}
 	
 	public float getLastTouchX() {
 		return lastTouchX;
@@ -33,6 +28,10 @@ public class RotationDetector {
 	
 	public float getLastTouchY() {
 		return lastTouchY;
+	}
+	
+	public boolean isInProgress() {
+		return inProgress;
 	}
 	
 	public boolean onTouchEvent(MotionEvent event){
@@ -48,7 +47,7 @@ public class RotationDetector {
 				
 				activePointers.put(event.getPointerId(0), position);
 				break;
-			} case MotionEvent.ACTION_POINTER_DOWN: {
+			} case MotionEvent.ACTION_POINTER_DOWN: {				
 				int pointerIndex = event.getActionIndex();
 				int pointerId = event.getPointerId(pointerIndex);
 				
@@ -64,6 +63,8 @@ public class RotationDetector {
 			} case MotionEvent.ACTION_MOVE: {
 				if(activePointers.size() != 3)
 					return false;
+				
+				inProgress = true;
 				
 				float sumX = 0;
 				float sumY = 0;
@@ -90,18 +91,22 @@ public class RotationDetector {
 				int pointerIndex = event.getActionIndex();
 				int pointerId = event.getPointerId(pointerIndex);
 				
-				float[] pos = activePointers.get(pointerId);
 				activePointers.remove(pointerId);
+				
 				break;
 			} case MotionEvent.ACTION_POINTER_UP: {
 				int pointerIndex = event.getActionIndex();
 				int pointerId = event.getPointerId(pointerIndex);
 				
-				float[] pos = activePointers.get(pointerId);
 				activePointers.remove(pointerId);
-		        break;
+
+				if(activePointers.size() <= 1)
+		    		inProgress = false;
+				
+				break;
 			}
 		}
+    	
 		return true;
 	}
 	

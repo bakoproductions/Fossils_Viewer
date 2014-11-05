@@ -2,34 +2,89 @@ package com.bakoproductions.fossilsviewer.ar;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.view.ScaleGestureDetector;
+
+import com.bakoproductions.fossilsviewer.gestures.RotationDetector;
+import com.bakoproductions.fossilsviewer.gestures.TranslationDetector;
 import com.bakoproductions.fossilsviewer.objects.Model;
 
 import edu.dhbw.andar.ARObject;
 
 public class CustomObject extends ARObject {
 	private Model model;
-	private float z = 30.0f;
-	
+
+	/* ====== Touch events parameters ====== */
+	private float scaleFactor = 1.0f;
+	   
+    private float posX = 0.0f;
+    private float posY = 0.0f;
+ 
+    private float rotX = 0.0f;
+    private float rotY = 0.0f;
+    /* ===================================== */
+    
 	public CustomObject(String name, String patternName, double markerWidth, double[] markerCenter, Model model) {
 		super(name, patternName, markerWidth, markerCenter);
-		
+
 		this.model = model;
 	}
 	
 	@Override
 	public void init(GL10 gl) {
 		gl.glEnable(GL10.GL_TEXTURE_2D);
+		
 		model.prepareTextures(gl);
 	}
 	
 	@Override
 	public final void draw(GL10 gl) {
 		super.draw(gl);
-
-		gl.glTranslatef(0.0f, 0.0f, 0.0f);
-		gl.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);	//X
-		gl.glRotatef(90.0f, 0.0f, 1.0f, 0.0f);	//Y
-		gl.glScalef(10.0f, 10.0f, 10.0f);
+		float[] center = model.getSphere().getCenter();
+		
+		gl.glScalef(scaleFactor, scaleFactor, scaleFactor);
+		gl.glRotatef(rotX, 1, 0, 0);
+		gl.glRotatef(rotY, 0, 1, 0);
+		gl.glTranslatef(-center[0], -center[1], -center[2]);
 		model.draw(gl);						
+	}
+	
+	public float getScaleFactor() {
+		return scaleFactor;
+	}
+	
+	public void setScaleFactor(float scaleFactor) {
+		this.scaleFactor = scaleFactor;
+	}
+	
+	public float getPosX() {
+		return posX;
+	}
+	
+	public void setPosX(float posX) {
+		this.posX = posX;
+	}
+	
+	public float getPosY() {
+		return posY;
+	}
+	
+	public void setPosY(float posY) {
+		this.posY = posY;
+	}
+	
+	public float getRotX() {
+		return rotX;
+	}
+	
+	public void setRotX(float rotX) {
+		this.rotX = rotX;
+	}
+	
+	public float getRotY() {
+		return rotY;
+	}
+	
+	public void setRotY(float rotY) {
+		this.rotY = rotY;
 	}
 }

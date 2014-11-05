@@ -1,27 +1,29 @@
 package com.bakoproductions.fossilsviewer.objects;
 
+import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
+import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.microedition.khronos.opengles.GL10;
 
-import com.bakoproductions.fossilsviewer.util.Globals;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.opengl.GLUtils;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
-import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
-import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;;
 
-public class Model {
+import com.bakoproductions.fossilsviewer.util.Util;
+
+public class Model implements Parcelable{
 	private Context context;
 	
 	private Vector<Float> vertices;
-	private Vector<Float> normals;
-	private Vector<Float> textures;
 	private Vector<ModelPart> parts;
 	private FloatBuffer vertexBuffer;
 	
@@ -32,15 +34,13 @@ public class Model {
 		this.context = context;
 	}
 	
-	public Model(Vector<Float> verticies, Vector<Float> normals, Vector<Float> textures, Vector<ModelPart> parts){
+	public Model(Context context, Vector<Float> verticies, Vector<ModelPart> parts){
+		this.context = context;
 		this.vertices = verticies;
-		this.normals = normals;
-		this.textures = textures;
 	}
 	
 	public void prepareTextures(GL10 gl){
 		Material[] materials = new Material[parts.size()];
-		
 		int activeTextures = 0;
 		for(int i=0;i<parts.size();i++){
 			materials[i] = parts.get(i).getMaterial();
@@ -54,9 +54,8 @@ public class Model {
 		for(int i=0;i<materials.length;i++){
 			if(materials[i] == null)
 				continue;
-			
+
 			Bitmap bitmap = materials[i].getBitmap(context);
-			
 			if(bitmap != null) {
 				gl.glBindTexture(GL10.GL_TEXTURE_2D, bindedTextures[textureId]);
 				gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
@@ -95,15 +94,14 @@ public class Model {
 			
 			gl.glTexCoordPointer(2, GL10.GL_FLOAT, 0, modelPart.getTextureBuffer());
 			gl.glNormalPointer(GL10.GL_FLOAT, 0, modelPart.getNormalBuffer());
-			gl.glDrawElements(GL10.GL_TRIANGLES, modelPart.getFacesSize(), GL10.GL_UNSIGNED_SHORT, modelPart.getFaceBuffer());
+			gl.glDrawElements(GL10.GL_TRIANGLES, modelPart.getFaceBuffer().capacity(), GL10.GL_UNSIGNED_SHORT, modelPart.getFaceBuffer());
 			
 			gl.glDisableClientState(GL10.GL_VERTEX_ARRAY);
 			gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
 			gl.glDisableClientState(GL10.GL_NORMAL_ARRAY);
 			gl.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
+			
 		}
-		
-		//sphere.draw(gl);
 	}
 	
 	public void buildVertexBuffer(Vector<Short> vertexPointers){
@@ -124,14 +122,6 @@ public class Model {
 		this.vertices = vertices;
 	}
 	
-	public void setNormals(Vector<Float> normals) {
-		this.normals = normals;
-	}
-	
-	public void setTextures(Vector<Float> textures) {
-		this.textures = textures;
-	}
-	
 	public Vector<ModelPart> getParts() {
 		return parts;
 	}
@@ -146,5 +136,63 @@ public class Model {
 	
 	public BoundingSphere getSphere() {
 		return sphere;
+	}
+		
+	public void setContext(Context context) {
+		this.context = context;
+	}
+	
+	public void printVertexBuffer() {
+		for(int i=0;i<vertexBuffer.capacity();i++) {
+			Log.i(Model.class.getSimpleName(), "" + vertexBuffer.get(i));
+		}
+	}
+	
+	public static final Parcelable.Creator<Model> CREATOR = new Parcelable.Creator<Model>() {
+        public Model createFromParcel(Parcel pc) {
+            return new Model(pc);
+        }
+        public Model[] newArray(int size) {
+            return new Model[size];
+        }
+	};
+	
+	public Model(Parcel parcel) {
+		float[] vertexArray = parcel.createFloatArray();
+		
+		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(vertexArray.length * BYTES_PER_FLOAT);
+		byteBuffer.order(ByteOrder.nativeOrder());
+		vertexBuffer = byteBuffer.asFloatBuffer();
+		vertexBuffer.put(vertexArray);
+		vertexBuffer.position(0);
+		
+		sphere = parcel.readParcelable(BoundingSphere.class.getClassLoader());
+		
+		ArrayList<ModelPart> partList = (ArrayList<ModelPart>) parcel.readArrayList(ModelPart.class.getClassLoader());
+		parts = new Vector<ModelPart>();
+
+		for(int i=0;i<partList.size();i++) {
+			parts.add(partList.get(i));
+		}
+	}
+	
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		float[] vertexArray = Util.toFloatArray(vertexBuffer);
+		//ModelPart[] partArray = parts.toArray(new ModelPart[parts.size()]);
+		
+		ArrayList<ModelPart> partList = new ArrayList<ModelPart>();
+		for(int i=0;i<parts.size();i++) {
+			partList.add(parts.get(i));
+		}
+		
+		dest.writeFloatArray(vertexArray);
+		dest.writeParcelable(sphere, flags);
+		dest.writeList(partList);
 	}
 }

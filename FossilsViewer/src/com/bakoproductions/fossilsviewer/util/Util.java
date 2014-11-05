@@ -1,5 +1,7 @@
 package com.bakoproductions.fossilsviewer.util;
 
+import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -94,5 +96,25 @@ public class Util {
 		faces.add(index);
 		
 		return nextIndex;
+	}
+	
+	public static float[] toFloatArray(FloatBuffer buffer) {
+		float[] ret = new float[buffer.capacity()];
+		
+		while(buffer.hasRemaining()) {
+			ret[buffer.position()] = buffer.get(); 
+		}
+		buffer.position(0);
+		return ret;
+	}
+	
+	public static int[] toIntArray(ShortBuffer buffer) {
+		int[] ret = new int[buffer.capacity()];
+		
+		while(buffer.hasRemaining()) {
+			ret[buffer.position()] = buffer.get(); 
+		}
+		buffer.position(0);
+		return ret;
 	}
 }

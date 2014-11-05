@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:yourApp="http://schemas.android.com/apk/res-auto" >
+    
+    <item
+        android:id="@+id/action_center"
+        android:icon="@drawable/action_center_selector"
+        android:orderInCategory="100"
+        android:title="@string/action_center"  />
+    
+    <item
+        android:id="@+id/action_unlock_translation"
+        android:icon="@drawable/action_unlock_translation_selector"
+        android:orderInCategory="101"
+        android:title="@string/action_unlock_translation"  />
+    
+    <item
+        android:id="@+id/action_lock_translation"
+        android:icon="@drawable/action_lock_translation_selector"
+        android:orderInCategory="101"
+        android:title="@string/action_lock_translation"  />
+    
+    <item
+        android:id="@+id/action_open_light"
+        android:icon="@drawable/action_open_light_selector"
+        android:orderInCategory="102"
+        android:title="@string/action_open_light"  />
+    
+    <item
+        android:id="@+id/action_close_light"
+        android:icon="@drawable/action_close_light_selector"
+        android:orderInCategory="102"
+        android:title="@string/action_close_light"  />
+
+</menu>

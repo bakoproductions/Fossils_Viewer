@@ -4,6 +4,13 @@ import java.nio.FloatBuffer;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.content.Context;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
+
+import com.bakoproductions.fossilsviewer.gestures.RotationDetector;
+import com.bakoproductions.fossilsviewer.gestures.TranslationDetector;
+
 import edu.dhbw.andar.AndARRenderer;
 import edu.dhbw.andar.interfaces.OpenGLRenderer;
 import edu.dhbw.andar.util.GraphicsUtil;
@@ -15,7 +22,11 @@ import edu.dhbw.andar.util.GraphicsUtil;
  *
  */
 public class ARRenderer implements OpenGLRenderer {
+	private ScaleGestureDetector scaleDetector;
+	private TranslationDetector translationDetector;
+    private RotationDetector rotationDetector;
 	
+    private CustomObject customObject;
 	/**
 	 * Light definitions
 	 */	
@@ -35,6 +46,12 @@ public class ARRenderer implements OpenGLRenderer {
 	private FloatBuffer diffuseLightBuffer1 = GraphicsUtil.makeFloatBuffer(diffuselight1);
 	private FloatBuffer ambientLightBuffer1 = GraphicsUtil.makeFloatBuffer(ambientlight1);
 	
+	public ARRenderer(Context context, CustomObject customObject) {
+		this.customObject = customObject;
+		
+		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
+		rotationDetector = new RotationDetector(new RotationListener());
+	}
 	/**
 	 * Do non Augmented Reality stuff here. Will be called once after all AR objects have
 	 * been drawn. The transformation matrices may have to be reset.
@@ -66,4 +83,54 @@ public class ARRenderer implements OpenGLRenderer {
 		gl.glEnable(GL10.GL_DEPTH_TEST);
 		gl.glEnable(GL10.GL_NORMALIZE);
 	}
+	
+	public boolean onTouchEvent(MotionEvent event) {
+		rotationDetector.onTouchEvent(event);
+		scaleDetector.onTouchEvent(event);
+		return true;
+	}
+
+	private class RotationListener implements RotationDetector.OnRotationListener{
+		@Override
+		public void onRotation(RotationDetector rotationDetector, float x, float y) {
+			if(!scaleDetector.isInProgress()){
+				final float dx = x - rotationDetector.getLastTouchX();
+				final float dy = y - rotationDetector.getLastTouchY();
+				
+				float rotX = customObject.getRotX();
+				float rotY = customObject.getRotY();
+				
+				rotX += dy * RotationDetector.ROTATION_SCALE;
+				rotY += dx * RotationDetector.ROTATION_SCALE;
+				
+				if(rotX >= 360.0f || rotX <= -360.0f) {
+					rotX = 0.0f;
+				}
+				
+				if(rotY >= 360.0f || rotY <= -360.0f) {
+					rotY = 0.0f;
+				}
+				
+				customObject.setRotX(rotX);
+				customObject.setRotY(rotY);
+			}
+		}
+	}
+	
+	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+	    @Override
+	    public boolean onScale(ScaleGestureDetector detector) {
+	    	if(!rotationDetector.isInProgress()) {
+	    		float scaleFactor = customObject.getScaleFactor();
+	    		
+		        scaleFactor *= detector.getScaleFactor();
+		        scaleFactor = Math.max(0.1f, Math.min(scaleFactor, 50.0f));
+		        
+		        customObject.setScaleFactor(scaleFactor);
+		        return true;
+	    	}
+	    	return false;
+	    }
+	}
+	
 }

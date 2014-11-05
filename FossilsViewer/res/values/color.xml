@@ -6,7 +6,7 @@
     
     <!-- ActionBar Colors -->
     <color name="ActionBar">#5DC6C1</color>
-    <color name="ActionBarTitle">#F4F8FF</color>
+    <color name="ActionBarTitle">#F6F6F6</color>
     
     <!-- ListView colors -->
     <color name="ObjectName">#000000</color>

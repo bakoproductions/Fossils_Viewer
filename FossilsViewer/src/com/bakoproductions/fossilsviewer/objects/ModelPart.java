@@ -1,25 +1,23 @@
 package com.bakoproductions.fossilsviewer.objects;
 
+import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
+import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_SHORT;
+import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;
+import static com.bakoproductions.fossilsviewer.util.Globals.TWO_DIM_ATTRS;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.Vector;
 
-import javax.microedition.khronos.opengles.GL10;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.opengl.GLUtils;
-import android.util.Log;
-import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
-import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_SHORT;
-import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;
-import static com.bakoproductions.fossilsviewer.util.Globals.TWO_DIM_ATTRS;
+import com.bakoproductions.fossilsviewer.util.Util;
 
 
-public class ModelPart {
+public class ModelPart implements Parcelable{
 	private Vector<Short> faces;
 	private Vector<Short> texturePointers;
 	private Vector<Short> normalPointers;
@@ -68,7 +66,6 @@ public class ModelPart {
 		for(int i=0; i<texturePointers.size(); i++){
 			int index = texturePointers.get(i);
 			
-			//Log.d("Bako", "textPointer:" + Integer.valueOf(texturePointers.get(i) + 1) + " " + u + " " + v);
 			textureBuffer.put(textures.get(index * TWO_DIM_ATTRS));
 			textureBuffer.put(1 - textures.get(index * TWO_DIM_ATTRS + 1));
 		}
@@ -100,8 +97,67 @@ public class ModelPart {
 		
 		for (int i=0; i<vector.size(); i++){
 			s[i] = vector.get(i);
-			//Log.d("Bako", s[i] + "");
 		}
 		return s;
+	}
+	
+	private short[] toShortArray(int[] array){
+		short[] s = new short[array.length];
+		
+		for (int i=0; i<s.length; i++){
+			s[i] = (short) array[i];
+		}
+		return s;
+	}
+	
+	public static final Parcelable.Creator<ModelPart> CREATOR = new Parcelable.Creator<ModelPart>() {
+        public ModelPart createFromParcel(Parcel pc) {
+            return new ModelPart(pc);
+        }
+        public ModelPart[] newArray(int size) {
+            return new ModelPart[size];
+        }
+	};
+	
+	public ModelPart(Parcel parcel) {
+		float[] normalArray = parcel.createFloatArray();
+		float[] textureArray = parcel.createFloatArray();
+		int[] faceArray = parcel.createIntArray();		
+		material = parcel.readParcelable(Material.class.getClassLoader());
+		
+		ByteBuffer byteBufferNormals = ByteBuffer.allocateDirect(normalArray.length * BYTES_PER_FLOAT);
+		byteBufferNormals.order(ByteOrder.nativeOrder());
+		normalBuffer = byteBufferNormals.asFloatBuffer();
+		normalBuffer.put(normalArray);
+		normalBuffer.position(0);
+		
+		ByteBuffer byteBufferTextures = ByteBuffer.allocateDirect(textureArray.length * BYTES_PER_FLOAT);
+		byteBufferTextures.order(ByteOrder.nativeOrder());
+		textureBuffer = byteBufferTextures.asFloatBuffer();
+		textureBuffer.put(textureArray);
+		textureBuffer.position(0);
+		
+		ByteBuffer byteBufferFaces = ByteBuffer.allocateDirect(faceArray.length * BYTES_PER_SHORT);
+		byteBufferFaces.order(ByteOrder.nativeOrder());
+		faceBuffer = byteBufferFaces.asShortBuffer();
+		faceBuffer.put(toShortArray(faceArray));
+		faceBuffer.position(0);
+	}
+	
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		float[] normalArray = Util.toFloatArray(normalBuffer);
+		float[] textureArray = Util.toFloatArray(textureBuffer);
+		int[] faceArray = Util.toIntArray(faceBuffer);
+		
+		dest.writeFloatArray(normalArray);
+		dest.writeFloatArray(textureArray);
+		dest.writeIntArray(faceArray);
+		dest.writeParcelable(material, flags);
 	}
 }

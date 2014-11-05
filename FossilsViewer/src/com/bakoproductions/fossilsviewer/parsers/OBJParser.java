@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -184,8 +185,6 @@ public class OBJParser implements ModelParser {
 		}
 		
 		model.setVertices(vertices);
-		model.setNormals(normals);
-		model.setTextures(textures);
 		model.setParts(parts);
 		model.buildVertexBuffer(vertexPointers);
 		
@@ -193,8 +192,8 @@ public class OBJParser implements ModelParser {
 		float[] center = getCenterPoint(minX, maxX, minY, maxY, minZ, maxZ);
 		float diameter = computeDiameter(center, vertices);
 		
-		Log.d("Bako", "Centroid: " + center[0] + ", " + center[1] + ", " + center[2]);
-		Log.d("Bako", "Diameter: " + diameter);
+		Log.i("Bako", "Centroid: " + center[0] + ", " + center[1] + ", " + center[2]);
+		Log.i("Bako", "Diameter: " + diameter);
 		
 		BoundingSphere sphere = new BoundingSphere(center, diameter);
 		model.applyBoundingSphere(sphere);
@@ -219,9 +218,20 @@ public class OBJParser implements ModelParser {
 	private float[] getCenterPoint(float minX, float maxX, float minY, float maxY, float minZ, float maxZ){
 		float[] center = new float[3];
 		
-		center[0] = Math.abs(maxX - minX) / 2.0f;
-		center[1] = Math.abs(maxY - minY) / 2.0f;
-		center[2] = Math.abs(maxZ - minZ) / 2.0f;
+		BigDecimal minXB = new BigDecimal(minX).setScale(6, BigDecimal.ROUND_HALF_UP);
+		BigDecimal maxXB = new BigDecimal(maxX).setScale(6, BigDecimal.ROUND_HALF_UP);
+		
+		BigDecimal minYB = new BigDecimal(minY).setScale(6, BigDecimal.ROUND_HALF_UP);
+		BigDecimal maxYB = new BigDecimal(maxY).setScale(6, BigDecimal.ROUND_HALF_UP);
+		
+		BigDecimal minZB = new BigDecimal(minZ).setScale(6, BigDecimal.ROUND_HALF_UP);
+		BigDecimal maxZB = new BigDecimal(maxZ).setScale(6, BigDecimal.ROUND_HALF_UP);
+		
+		BigDecimal divisor = new BigDecimal(2).setScale(6, BigDecimal.ROUND_HALF_UP);
+						
+		center[0] = maxXB.add(minXB).divide(divisor).setScale(6, BigDecimal.ROUND_HALF_UP).floatValue();
+		center[1] = maxYB.add(minYB).divide(divisor).setScale(6, BigDecimal.ROUND_HALF_UP).floatValue();
+		center[2] = maxZB.add(minZB).divide(divisor).setScale(6, BigDecimal.ROUND_HALF_UP).floatValue();
 		
 		return center;
 	}
@@ -245,21 +255,20 @@ public class OBJParser implements ModelParser {
 		return 2 * max;
 	}
 	
-	private float computeDiameter(float minX, float maxX, float minY, float maxY, float minZ, float maxZ){
-		float diamX = Math.abs(maxX - minX);
-		float diamY = Math.abs(maxY - minY);
-		float diamZ = Math.abs(maxZ - minZ);
-		
-		float max = getMax(diamX, diamY);
-		max = getMax(max, diamZ);
-		
-		return max;
-	}
-	
 	private float euclideanDistance(float[] center, float[] point) {
-		double sum = Math.pow(center[0] - point[0], 2);
-		sum += Math.pow(center[1] - point[1], 2);
-		sum += Math.pow(center[2] - point[2], 2);
+		BigDecimal center0 = new BigDecimal(center[0]).setScale(6, BigDecimal.ROUND_HALF_UP);
+		BigDecimal center1 = new BigDecimal(center[1]).setScale(6, BigDecimal.ROUND_HALF_UP);
+		BigDecimal center2 = new BigDecimal(center[2]).setScale(6, BigDecimal.ROUND_HALF_UP);
+		
+		BigDecimal point0 = new BigDecimal(point[0]).setScale(6, BigDecimal.ROUND_HALF_UP);
+		BigDecimal point1 = new BigDecimal(point[1]).setScale(6, BigDecimal.ROUND_HALF_UP);
+		BigDecimal point2 = new BigDecimal(point[2]).setScale(6, BigDecimal.ROUND_HALF_UP);
+		
+		
+		
+		double sum = center0.subtract(point0).pow(2).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
+		sum += center1.subtract(point1).pow(2).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
+		sum += center2.subtract(point2).pow(2).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
 		
 		return (float) Math.sqrt(sum);
 	}
