@@ -1,8 +1,14 @@
 package com.bakoproductions.fossilsviewer.viewer;
 
 import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.view.View;
+import android.widget.LinearLayout;
 
 import com.actionbarsherlock.app.SherlockActivity;
 import com.actionbarsherlock.view.Menu;
@@ -14,15 +20,52 @@ import com.bakoproductions.fossilsviewer.parsers.ModelParser;
 import com.bakoproductions.fossilsviewer.parsers.OBJParser;
 
 public class ViewerActivity extends SherlockActivity {
+	private ViewerGLSurfaceView glSurfaceView;
 	private ViewerRenderer renderer;
 	private Model model;
 	private OBJParser objParser;
+	private DialogHandler dialogHandler;
+	
+	private boolean modelParsed;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_viewer);
 		
+		dialogHandler = new DialogHandler();
+		glSurfaceView = (ViewerGLSurfaceView) findViewById(R.id.glSurfaceView);
+		glSurfaceView.setHandler(dialogHandler);
+		modelParsed = false;
+		
+		// If retain the instance of the activity
+		// try to retrieve the object
+		if(savedInstanceState != null) {
+			model = savedInstanceState.getParcelable("model");
+			if(model != null) {			
+				modelParsed = true;
+				renderer = new ViewerRenderer(model);
+				glSurfaceView.setEGLConfigChooser(true);
+				glSurfaceView.start(renderer);	
+				
+				renderer.setLockedTranslation(savedInstanceState.getBoolean("lockedTranslation"));
+				renderer.setClosedLight(savedInstanceState.getBoolean("closedLight"));
+								
+				renderer.setPosX(savedInstanceState.getFloat("posX"));
+				renderer.setPosY(savedInstanceState.getFloat("posY"));
+				
+				renderer.setRotX(savedInstanceState.getFloat("rotX"));
+				renderer.setRotY(savedInstanceState.getFloat("rotY"));
+				
+				renderer.setScaleFactor(savedInstanceState.getFloat("scaleFactor"));
+				supportInvalidateOptionsMenu();
+				return;
+			}
+		}
+		
+		// If the object couldn't be retrieved
+		// or this is the first time we open the activity
+		// try to read the object from the 'file'
 		Bundle extras = getIntent().getExtras();
 		String path = extras.getString("path");
 		String file = extras.getString("file");
@@ -35,19 +78,42 @@ public class ViewerActivity extends SherlockActivity {
 	protected void onPause() {
 		super.onPause();
 		
-		if(renderer != null)
-			renderer.onPause();
+		if(modelParsed == true)
+			glSurfaceView.onPause();
+		/*if(renderer != null)
+			renderer.onPause();*/
 	}
 	
 	@Override
 	protected void onResume() {
 		super.onResume();
 		
-		if(renderer != null)
-			renderer.onResume();
+		if(modelParsed == true)
+			glSurfaceView.onResume();
+		/*if(renderer != null)
+			renderer.onResume();*/
 	}
 	
-	
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		
+		if(model != null)
+			outState.putParcelable("model", model);
+		
+		if(renderer != null) {
+			outState.putBoolean("lockedTranslation", renderer.isLockedTranslation());
+			outState.putBoolean("closedLight", renderer.isClosedLight());
+			
+			outState.putFloat("posX", renderer.getPosX());
+			outState.putFloat("posY", renderer.getPosY());
+			
+			outState.putFloat("rotX", renderer.getRotX());
+			outState.putFloat("rotY", renderer.getRotY());
+			
+			outState.putFloat("scaleFactor", renderer.getScaleFactor());
+		}
+	}
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -120,6 +186,7 @@ public class ViewerActivity extends SherlockActivity {
 	}
 	
 	private class ParsingTask extends AsyncTask<Void, Void, Integer> {
+		private LinearLayout loadingLayout;
 		private Context context;
 		private String parentPath;
 		private String file;
@@ -132,15 +199,22 @@ public class ViewerActivity extends SherlockActivity {
 		
 		@Override
 		protected void onPreExecute() {
+			lockScreenOrientation();
+			
+			modelParsed = false;
+			
+			loadingLayout = (LinearLayout) findViewById(R.id.progressViewerLayout);
+			loadingLayout.setVisibility(View.VISIBLE);
+			glSurfaceView.setVisibility(View.INVISIBLE);
+			
 			model = new Model(context);
 			objParser = new OBJParser(context, parentPath, file);
-			
+
 			super.onPreExecute();
 		}
 		@Override
 		protected Integer doInBackground(Void... params) {
 			int resultOBJ = objParser.parse(model);
-			
 			return resultOBJ;
 		}
 		
@@ -152,10 +226,37 @@ public class ViewerActivity extends SherlockActivity {
 				return;
 			}
 			
-			renderer = new ViewerRenderer(context, model);
-			setContentView(renderer);
+			modelParsed = true;
+			renderer = new ViewerRenderer(model);
+			glSurfaceView.setEGLConfigChooser(true);
+			glSurfaceView.start(renderer);
+			
+			loadingLayout.setVisibility(View.GONE);
+			glSurfaceView.setVisibility(View.VISIBLE);
+			
 			supportInvalidateOptionsMenu();
+			unlockScreenOrientation();
 			super.onPostExecute(result);
 		}		
+	}
+	
+	private void lockScreenOrientation() {
+	    int currentOrientation = getResources().getConfiguration().orientation;
+	    if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
+	        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+	    } else {
+	        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+	    }
+	}
+	
+	private void unlockScreenOrientation() {
+	    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+	}
+	
+	public class DialogHandler extends Handler {
+		@Override
+		public void handleMessage(Message msg) {
+			AnnotationDialog dialog = new AnnotationDialog(ViewerActivity.this);
+		}
 	}
 }

@@ -9,34 +9,16 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import android.content.Context;
-import android.content.Intent;
-import android.opengl.GLSurfaceView;
 import android.opengl.GLSurfaceView.Renderer;
 import android.opengl.GLU;
-import android.os.Vibrator;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 
-import com.bakoproductions.fossilsviewer.ar.ARActivity;
-import com.bakoproductions.fossilsviewer.gestures.ClickDetector;
-import com.bakoproductions.fossilsviewer.gestures.LongPressDetector;
-import com.bakoproductions.fossilsviewer.gestures.RotationDetector;
-import com.bakoproductions.fossilsviewer.gestures.TranslationDetector;
 import com.bakoproductions.fossilsviewer.objects.BoundingSphere;
 import com.bakoproductions.fossilsviewer.objects.Model;
 
-public class ViewerRenderer extends GLSurfaceView implements Renderer {
+public class ViewerRenderer implements Renderer {
 	private static final String TAG = ViewerRenderer.class.getSimpleName();
 	private Model model;
-	private Context context;
-	
-	private ClickDetector clickDetector;
-	private LongPressDetector longPressDetector;
-	private ScaleGestureDetector scaleDetector;
-	private TranslationDetector translationDetector;
-    private RotationDetector rotationDetector;
     
     private boolean lockedTranslation;
     private boolean closedLight;
@@ -56,6 +38,12 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer {
 	private float zFar;
 	/* ===================================== */
 	
+	/* ======== User Interaction =========== */
+	private boolean userClicked;
+	private float clickX;
+	private float clickY;
+	/* ===================================== */
+	
 	/* ============= Lights ================ */
 	private float[] lightAmbient;
 	private float[] lightDiffuse;
@@ -71,12 +59,8 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer {
 	private FloatBuffer lightDirectionBuffer;
 	/* ===================================== */
 	
-	public ViewerRenderer(Context context, Model model) {
-		super(context);
-		
-		this.context = context;
-		this.model = model;
-		this.setRenderer(this);
+	public ViewerRenderer(Model model) {
+		this.setModel(model);
 		
 		lightAmbient = new float[]{0.1f, 0.1f, 0.1f, 1.0f};
 		lightDiffuse = new float[]{0.2f, 0.2f, 0.2f, 1.0f};
@@ -117,19 +101,16 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer {
 		lightDirectionBuffer = byteBuf.asFloatBuffer();
 		lightDirectionBuffer.put(lightDirection);
 		lightDirectionBuffer.position(0);
+		Log.i("Bako", "new renderer completed");
 		
 		lockedTranslation = false;
 		closedLight = false;
-		
-		clickDetector = new ClickDetector(new ClickListener());
-		longPressDetector = new LongPressDetector(new LongPressListener());
-		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
-		translationDetector = new TranslationDetector(new TranslationListener());
-		rotationDetector = new RotationDetector(new RotationListener());
+		userClicked = false;
 	}
 
 	@Override
-	public void onSurfaceCreated(GL10 gl, EGLConfig config) {	
+	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+		Log.i("Bako", "surface created");
 		gl.glMatrixMode(GL10.GL_PROJECTION);
 		gl.glLoadIdentity();
 		gl.glMatrixMode(GL10.GL_MODELVIEW);
@@ -151,7 +132,7 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer {
 		gl.glEnable(GL10.GL_DEPTH_TEST); 			
 		gl.glDepthFunc(GL10.GL_LEQUAL); 		
 		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, GL10.GL_NICEST);
-		model.prepareTextures(gl);
+		getModel().prepareTextures(gl);
 	}
 
 	@Override
@@ -165,7 +146,7 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer {
 		gl.glLoadIdentity(); 					//Reset The Projection Matrix
 
 		//Calculate The Aspect Ratio Of The Window
-		BoundingSphere sphere = model.getSphere();
+		BoundingSphere sphere = getModel().getSphere();
 		float diameter = sphere.getDiameter();
 		zFar = zNear + diameter;
 		
@@ -187,28 +168,24 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer {
 		
 		gl.glLoadIdentity();					
 		
-		float[] center = model.getSphere().getCenter();
-		float diameter = model.getSphere().getDiameter();
+		float[] center = getModel().getSphere().getCenter();
+		float diameter = getModel().getSphere().getDiameter();
 		
 		GLU.gluLookAt(gl, -posX, -posY, diameter, -posX, -posY, 0, 0.0f, 1.0f, 0.0f);
 		
 		gl.glPushMatrix();		
-		gl.glScalef(scaleFactor, scaleFactor, scaleFactor);
-		gl.glRotatef(rotX, 1, 0, 0);
-		gl.glRotatef(rotY, 0, 1, 0);
+		gl.glScalef(getScaleFactor(), getScaleFactor(), getScaleFactor());
+		gl.glRotatef(getRotX(), 1, 0, 0);
+		gl.glRotatef(getRotY(), 0, 1, 0);
 		gl.glTranslatef(-center[0], -center[1], -center[2]);
-		model.draw(gl);
+		getModel().draw(gl);
+		
+		if(userClicked) {
+			Log.i(TAG, "User clicked at: " + clickX + ", " + clickY);
+			userClicked = false;
+		}
+		
 		gl.glPopMatrix();
-	}
-	
-	@Override
-	public boolean onTouchEvent(MotionEvent event) {
-		clickDetector.onTouchEvent(event);
-		longPressDetector.onTouchEvent(event);
-		rotationDetector.onTouchEvent(event);
-		scaleDetector.onTouchEvent(event);
-		translationDetector.onTouchEvent(event);
-		return true;
 	}
 	
 	public void setLockedTranslation(boolean lockedTranslation) {
@@ -220,8 +197,8 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer {
 	}
 	
 	public void centerModel() {
-		posX = 0;
-		posY = 0;
+		setPosX(0);
+		setPosY(0);
 	}
 	
 	public void setClosedLight(boolean closedLight) {
@@ -231,85 +208,64 @@ public class ViewerRenderer extends GLSurfaceView implements Renderer {
 	public boolean isClosedLight() {
 		return closedLight;
 	}
-	
-	private class ClickListener implements ClickDetector.OnClickListener {
-		@Override
-		public void onClick(ClickDetector clickDetector, int x, int y) {
-			if(!longPressDetector.isInProgress()) { 
-				Intent intent = new Intent(context, ARActivity.class);
-				intent.putExtra("model", model);
-				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				context.startActivity(intent);
-			}
-		}
+
+	public float getScaleFactor() {
+		return scaleFactor;
+	}
+
+	public void setScaleFactor(float scaleFactor) {
+		this.scaleFactor = scaleFactor;
+	}
+
+	public float getPosX() {
+		return posX;
+	}
+
+	public void setPosX(float posX) {
+		this.posX = posX;
+	}
+
+	public float getPosY() {
+		return posY;
+	}
+
+	public void setPosY(float posY) {
+		this.posY = posY;
+	}
+
+	public float getRotX() {
+		return rotX;
+	}
+
+	public void setRotX(float rotX) {
+		this.rotX = rotX;
+	}
+
+	public float getRotY() {
+		return rotY;
+	}
+
+	public void setRotY(float rotY) {
+		this.rotY = rotY;
+	}
+
+	public Model getModel() {
+		return model;
+	}
+
+	public void setModel(Model model) {
+		this.model = model;
 	}
 	
-	private class LongPressListener implements LongPressDetector.OnLongClickListener {
-		@Override
-		public void onLongClick(LongPressDetector longPressDetector, float x, float y) {
-			Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-			vibrator.vibrate(100);
-			Log.i(TAG, "X: " + x + ", Y:" + y);
-		}
+	public void setUserClicked(boolean userClicked) {
+		this.userClicked = userClicked;
 	}
 	
-	private class TranslationListener implements TranslationDetector.OnTranslationListener {
-		@Override
-		public void onTranslation(TranslationDetector translationDetector, float x, float y) {
-			if(x < 0 || y < 0)
-				return;
-			
-			if(lockedTranslation) {
-				return;
-			}
-			
-			if(!scaleDetector.isInProgress() && !rotationDetector.isInProgress()){
-				final float dx = x - translationDetector.getLastTouchX();
-				final float dy = y - translationDetector.getLastTouchY();
-				
-				posX += dx/100;
-				posY -= dy/100;
-								
-				invalidate();
-			}
-		}
+	public void setClickX(float clickX) {
+		this.clickX = clickX;
 	}
 	
-	private class RotationListener implements RotationDetector.OnRotationListener{
-		@Override
-		public void onRotation(RotationDetector rotationDetector, float x, float y) {
-			if(!scaleDetector.isInProgress()){
-				final float dx = x - rotationDetector.getLastTouchX();
-				final float dy = y - rotationDetector.getLastTouchY();
-				
-				rotX += dy * RotationDetector.ROTATION_SCALE;
-				rotY += dx * RotationDetector.ROTATION_SCALE;
-				
-				if(rotX >= 360.0f || rotX <= -360.0f) {
-					rotX = 0.0f;
-				}
-				
-				if(rotY >= 360.0f || rotY <= -360.0f) {
-					rotY = 0.0f;
-				}
-				
-				invalidate();
-			}
-		}
-	}
-	
-	private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-	    @Override
-	    public boolean onScale(ScaleGestureDetector detector) {
-	    	if(!rotationDetector.isInProgress()) {
-		        scaleFactor *= detector.getScaleFactor();
-		        
-		        scaleFactor = Math.max(0.1f, Math.min(scaleFactor, 5.0f));
-	
-		        invalidate();
-		        return true;
-	    	}
-	    	return false;
-	    }
+	public void setClickY(float clickY) {
+		this.clickY = clickY;
 	}
 }

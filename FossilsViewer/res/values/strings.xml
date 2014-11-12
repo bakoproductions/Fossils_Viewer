@@ -4,10 +4,19 @@
     <string name="app_name">Fossils Viewer</string>
     <string name="loading_objects">Loading Objects</string>
     <string name="reading_object">Reading Object</string>
+    <string name="add_annotation">Add New Annotation</string>
+    <string name="annotation_title">Annotation Title</string>
+    <string name="annotation_description">Annotation Description</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    
     <string name="action_center">Center Object</string>
     <string name="action_unlock_translation">Unlock Translation</string>
     <string name="action_lock_translation">Lock Translation</string>
     <string name="action_open_light">Open Light</string>
     <string name="action_close_light">Close Light</string>
 
+    <string name="toast_add_title">Please add a title</string>
+    <string name="toast_add_description">Please add a description</string>
+    
 </resources>
