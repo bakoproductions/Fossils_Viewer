@@ -11,6 +11,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.Vector;
 
+import android.opengl.GLES20;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -34,6 +35,22 @@ public class ModelPart implements Parcelable{
 		this.normalPointers = normalPointers;
 		
 		this.material = material;
+	}
+	
+	public void bindBuffers(int tboId, int nboId, int iboId) {
+		if(tboId > 0 && nboId > 0 && iboId > 0) {
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, tboId);
+			GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, textureBuffer.capacity() * BYTES_PER_FLOAT, textureBuffer, GLES20.GL_STATIC_DRAW);
+			
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, nboId);
+			GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, normalBuffer.capacity() * BYTES_PER_FLOAT, normalBuffer, GLES20.GL_STATIC_DRAW);
+			
+			GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, iboId);
+			GLES20.glBufferData(GLES20.GL_ELEMENT_ARRAY_BUFFER, faceBuffer.capacity() * BYTES_PER_SHORT, faceBuffer, GLES20.GL_STATIC_DRAW);
+			
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+			GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0);
+		}
 	}
 	
 	public void buildNormalBuffer(Vector<Float> normals){
@@ -73,14 +90,17 @@ public class ModelPart implements Parcelable{
 	}
 	
 	public FloatBuffer getNormalBuffer(){
+		normalBuffer.position(0);
 		return normalBuffer;
 	}
 	
 	public FloatBuffer getTextureBuffer() {
+		textureBuffer.position(0);
 		return textureBuffer;
 	}
 	
 	public ShortBuffer getFaceBuffer(){
+		faceBuffer.position(0);
 		return faceBuffer;
 	}
 	

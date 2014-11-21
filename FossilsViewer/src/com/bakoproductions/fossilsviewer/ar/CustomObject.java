@@ -33,7 +33,7 @@ public class CustomObject extends ARObject {
 	public void init(GL10 gl) {
 		gl.glEnable(GL10.GL_TEXTURE_2D);
 		
-		model.prepareTextures(gl);
+		model.prepareTextures();
 	}
 	
 	@Override

@@ -1,7 +1,9 @@
 package com.bakoproductions.fossilsviewer.viewer;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ConfigurationInfo;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -9,6 +11,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.actionbarsherlock.app.SherlockActivity;
 import com.actionbarsherlock.view.Menu;
@@ -33,6 +36,15 @@ public class ViewerActivity extends SherlockActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_viewer);
 		
+		final ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
+        final boolean supportsEs2 = configurationInfo.reqGlEsVersion >= 0x20000;
+        
+        if(!supportsEs2) {
+        	Toast.makeText(this, R.string.toast_phone_not_supports_es2, Toast.LENGTH_SHORT).show();
+        	return;
+        }
+		
 		dialogHandler = new DialogHandler();
 		glSurfaceView = (ViewerGLSurfaceView) findViewById(R.id.glSurfaceView);
 		glSurfaceView.setHandler(dialogHandler);
@@ -44,7 +56,7 @@ public class ViewerActivity extends SherlockActivity {
 			model = savedInstanceState.getParcelable("model");
 			if(model != null) {			
 				modelParsed = true;
-				renderer = new ViewerRenderer(model);
+				renderer = new ViewerRenderer(this, model);
 				glSurfaceView.setEGLConfigChooser(true);
 				glSurfaceView.start(renderer);	
 				
@@ -227,7 +239,7 @@ public class ViewerActivity extends SherlockActivity {
 			}
 			
 			modelParsed = true;
-			renderer = new ViewerRenderer(model);
+			renderer = new ViewerRenderer(ViewerActivity.this, model);
 			glSurfaceView.setEGLConfigChooser(true);
 			glSurfaceView.start(renderer);
 			

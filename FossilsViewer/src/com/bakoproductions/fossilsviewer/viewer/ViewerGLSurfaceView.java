@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.opengl.GLSurfaceView;
 import android.os.Vibrator;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
@@ -15,7 +14,6 @@ import com.bakoproductions.fossilsviewer.gestures.LongPressDetector;
 import com.bakoproductions.fossilsviewer.gestures.RotationDetector;
 import com.bakoproductions.fossilsviewer.gestures.TranslationDetector;
 import com.bakoproductions.fossilsviewer.viewer.ViewerActivity.DialogHandler;
-
 
 public class ViewerGLSurfaceView extends GLSurfaceView {
 	private Context context;
@@ -63,6 +61,8 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 
 	public void start(ViewerRenderer renderer) {
 		this.renderer = renderer;
+		
+		setEGLContextClientVersion(2);
 		setRenderer(renderer);
 	}
 	
@@ -102,7 +102,7 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 			renderer.setClickX(x);
 			renderer.setClickY(y);
 			
-			dialogHanlder.sendEmptyMessage(0);
+			//dialogHanlder.sendEmptyMessage(0);
 		}
 	}
 	
@@ -123,8 +123,8 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 				float posX = renderer.getPosX();
 				float posY = renderer.getPosY();
 				
-				posX += dx/100;
-				posY -= dy/100;
+				posX += dx/10;
+				posY -= dy/10;
 				
 				renderer.setPosX(posX);
 				renderer.setPosY(posY);

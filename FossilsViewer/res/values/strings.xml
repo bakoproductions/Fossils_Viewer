@@ -18,5 +18,6 @@
 
     <string name="toast_add_title">Please add a title</string>
     <string name="toast_add_description">Please add a description</string>
+    <string name="toast_phone_not_supports_es2">Your mobile phone doesn\'t support OpenGL ES 2.0</string>
     
 </resources>

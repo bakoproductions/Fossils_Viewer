@@ -13,11 +13,14 @@ import javax.microedition.khronos.opengles.GL10;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import com.bakoproductions.fossilsviewer.util.Globals;
 import com.bakoproductions.fossilsviewer.util.Util;
 
 public class Model implements Parcelable{
@@ -28,6 +31,12 @@ public class Model implements Parcelable{
 	private FloatBuffer vertexBuffer;
 	
 	private int[] bindedTextures;
+	
+	private int[] vbo;
+	private int[] tbo;
+	private int[] nbo;
+	private int[] ibo;
+	
 	private BoundingSphere sphere;
 	
 	public Model(Context context){
@@ -39,7 +48,7 @@ public class Model implements Parcelable{
 		this.vertices = verticies;
 	}
 	
-	public void prepareTextures(GL10 gl){
+	public int[] prepareTextures(){
 		Material[] materials = new Material[parts.size()];
 		int activeTextures = 0;
 		for(int i=0;i<parts.size();i++){
@@ -48,23 +57,53 @@ public class Model implements Parcelable{
 				activeTextures++;
 		}
 		
-		bindedTextures = new int[activeTextures];
-		gl.glGenTextures(activeTextures, bindedTextures, 0);
+		final int[] textureHandle = new int[activeTextures];
+		GLES20.glGenTextures(activeTextures, textureHandle, 0);
+		
 		int textureId = 0;
-		for(int i=0;i<materials.length;i++){
+		for(int i=0;i<materials.length;i++) {
 			if(materials[i] == null)
 				continue;
-
-			Bitmap bitmap = materials[i].getBitmap(context);
-			if(bitmap != null) {
-				gl.glBindTexture(GL10.GL_TEXTURE_2D, bindedTextures[textureId]);
-				gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
-				gl.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+			
+			final BitmapFactory.Options options = new BitmapFactory.Options();
+	        options.inScaled = false;
+	        
+	        final Bitmap bitmap = materials[i].getBitmap(context);
+	        
+	        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[textureId]);
+	        
+	        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+	        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+	        
+	        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+	        
+	        bitmap.recycle();
+	        
+	        textureId++;
+		}
+		
+		return textureHandle;
+	}
+	
+	public void bindBuffers() {
+		vbo = new int[1];
+		tbo = new int[parts.size()];
+		nbo = new int[parts.size()];
+		ibo = new int[parts.size()];
+		
+		GLES20.glGenBuffers(1, vbo, 0);
+		GLES20.glGenBuffers(parts.size(), tbo, 0);
+		GLES20.glGenBuffers(parts.size(), nbo, 0);
+		GLES20.glGenBuffers(parts.size(), ibo, 0);
+		
+		if(vbo[0] > 0) {
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0]);
+			GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexBuffer.capacity() * BYTES_PER_FLOAT,	vertexBuffer, GLES20.GL_STATIC_DRAW);
+			
+			for(int i=0;i<parts.size();i++) {
+				ModelPart part = parts.get(i);
 				
-				GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, bitmap, 0);
-				bitmap.recycle();
-				
-				textureId++;
+				part.bindBuffers(tbo[i], nbo[i], ibo[i]);
 			}
 		}
 	}
@@ -104,6 +143,38 @@ public class Model implements Parcelable{
 		}
 	}
 	
+	public void draw(int positionId, int normalId, int textureId) {
+		if(vbo[0] > 0) {
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0]);
+			GLES20.glVertexAttribPointer(positionId, Globals.THREE_DIM_ATTRS, GLES20.GL_FLOAT, false, 0, 0);
+			GLES20.glEnableVertexAttribArray(positionId);
+			
+			for(int i=0;i<parts.size();i++) {
+				ModelPart part = parts.get(i);
+				
+				if(nbo[i] > 0 && tbo[i] > 0 && ibo[i] > 0) {
+					GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, nbo[i]);
+					GLES20.glVertexAttribPointer(normalId, Globals.THREE_DIM_ATTRS, GLES20.GL_FLOAT, false, 0, 0);
+					GLES20.glEnableVertexAttribArray(normalId);
+					GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+					
+					GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, tbo[i]);
+					GLES20.glVertexAttribPointer(textureId, Globals.TWO_DIM_ATTRS, GLES20.GL_FLOAT, false, 0, 0);
+					GLES20.glEnableVertexAttribArray(textureId);
+					GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+					
+					GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, ibo[i]);
+					GLES20.glDrawElements(GLES20.GL_TRIANGLES, part.getFaceBuffer().capacity(), GLES20.GL_UNSIGNED_SHORT, 0);
+					GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0);
+				}
+			}
+			
+			GLES20.glDisableVertexAttribArray(normalId);
+			GLES20.glDisableVertexAttribArray(textureId);
+			GLES20.glDisableVertexAttribArray(positionId);
+		}
+	}
+	
 	public void buildVertexBuffer(Vector<Short> vertexPointers){
 		ByteBuffer vBuf = ByteBuffer.allocateDirect(vertexPointers.size() * BYTES_PER_FLOAT * THREE_DIM_ATTRS);
 		vBuf.order(ByteOrder.nativeOrder());
@@ -140,6 +211,11 @@ public class Model implements Parcelable{
 		
 	public void setContext(Context context) {
 		this.context = context;
+	}
+	
+	public FloatBuffer getVertexBuffer() {
+		vertexBuffer.position(0);
+		return vertexBuffer;
 	}
 	
 	public void printVertexBuffer() {
