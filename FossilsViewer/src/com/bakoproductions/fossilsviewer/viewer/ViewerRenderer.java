@@ -1,9 +1,5 @@
 package com.bakoproductions.fossilsviewer.viewer;
 
-import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
@@ -20,6 +16,7 @@ import android.util.Log;
 
 import com.bakoproductions.fossilsviewer.R;
 import com.bakoproductions.fossilsviewer.objects.BoundingSphere;
+import com.bakoproductions.fossilsviewer.objects.Line;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
 import com.bakoproductions.fossilsviewer.shaders.ShadersUtil;
@@ -30,6 +27,9 @@ public class ViewerRenderer implements Renderer {
 	
 	private Context context;
 	private Model model;
+	private Model pushPin;
+	private Line line;
+	private ArrayList<float[]> annotationPoints = new ArrayList<float[]>();
     
     private boolean lockedTranslation;
     private boolean closedLight;
@@ -50,30 +50,24 @@ public class ViewerRenderer implements Renderer {
 	/* ===================================== */
 	
 	/* ======== User Interaction =========== */
+	float[] P1 = new float[3];
+	float[] P2 = new float[3];
 	private boolean userClicked;
 	private float clickX;
 	private float clickY;
 	/* ===================================== */
 	
 	/*
-	 * Matrices
+	 * Matrices of the Mesh
 	 */
 	private float[] modelMatrix = new float[16];
 	private float[] viewMatrix = new float[16];
 	private float[] projectionMatrix = new float[16];
-	private float[] temporaryMatrix = new float[16];
 	private float[] lightModelMatrix = new float[16];
+	private float[] MVMatrix = new float[16];
 	private float[] MVPMatrix = new float[16];
 	private int[] viewport;
-	
-	/*
-	 * Point Information
-	 */
-	private float[] pointMVPMatrix = new float[16];
-	private float[] pointModelMatrix = new float[16];
-	private final float[] pointPosInWorldSpace = new float[4];
-	private final float[] pointPosInEyeSpace = new float[4];
-	
+
 	/*
 	 * Light Information
 	 */
@@ -94,20 +88,18 @@ public class ViewerRenderer implements Renderer {
 	private int positionAttribute;
 	private int normalAttribute;
 	private int textCoordinateAttribute;
-	private int lightColorAttribute;
-	
-	private int pointPositionAttribute;
-	private int pointMVPMatrixUniform;
+	private int colorAttribute;
+
 	
 	private int[] textureData;
-	private int vertexProgramID;
-	private int pointProgramID;
+	private int textureLightProgram;
+	private int noTextureLightProgram;
+	private int lightProgram;
 	
-	private FloatBuffer pointsBuffer = null;
-	
-	public ViewerRenderer(Context context, Model model) {
+	public ViewerRenderer(Context context, Model model, Model pushPin) {
 		this.context = context;
 		this.setModel(model);
+		this.pushPin = pushPin;
 		
 		lockedTranslation = false;
 		closedLight = false;
@@ -122,9 +114,7 @@ public class ViewerRenderer implements Renderer {
 		GLES20.glCullFace(GLES20.GL_BACK);
 		GLES20.glFrontFace(GLES20.GL_CW);
 	    GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-		
-	    GLES20.glEnable(GLES20.GL_TEXTURE_2D);
-	    
+
 		// Position the eye behind the origin.
 	    final float eyeX = -posX;
 	    final float eyeY = -posY;
@@ -139,16 +129,27 @@ public class ViewerRenderer implements Renderer {
 	    final float upX = 0.0f;
 	    final float upY = 1.0f;
 	    final float upZ = 0.0f;
-		
-	    Matrix.setLookAtM(viewMatrix, 0, eyeX, eyeY, eyeZ, lookX, lookY, lookZ, upX, upY, upZ);
 	    
-	    ShadersUtil perVertexShaders = new ShadersUtil(context, R.raw.texture_light_vertex_shader, R.raw.texture_light_fragment_shader);	    
-	    perVertexShaders.loadVertexShader();
-	    perVertexShaders.loadFragmentShader();
-	    vertexProgramID = perVertexShaders.linkShaders();
+	    Matrix.setLookAtM(viewMatrix, 0, eyeX, eyeY, eyeZ, lookX, lookY, lookZ, upX, upY, upZ);
 	    
 		textureData = model.prepareTextures();
 		model.bindBuffers();
+		pushPin.bindBuffers();
+		
+		ShadersUtil textureLightShaders = new ShadersUtil(context, R.raw.texture_light_vertex_shader, R.raw.texture_light_fragment_shader);	    
+	    textureLightShaders.loadVertexShader();
+	    textureLightShaders.loadFragmentShader();
+	    textureLightProgram = textureLightShaders.linkShaders();
+	    
+	    ShadersUtil noTextureLightShaders = new ShadersUtil(context, R.raw.notexture_light_vertex_shader, R.raw.notexture_light_fragment_shader);	    
+	    noTextureLightShaders.loadVertexShader();
+	    noTextureLightShaders.loadFragmentShader();
+	    noTextureLightProgram = noTextureLightShaders.linkShaders();
+	    
+	    ShadersUtil lightShaders = new ShadersUtil(context, R.raw.light_vertex_shader, R.raw.light_fragment_shader);	    
+	    lightShaders.loadVertexShader();
+	    lightShaders.loadFragmentShader();
+	    lightProgram = lightShaders.linkShaders();
 	}
 
 	@Override
@@ -163,44 +164,76 @@ public class ViewerRenderer implements Renderer {
 		//Calculate The Aspect Ratio Of The Window
 		BoundingSphere sphere = getModel().getSphere();
 		float diameter = sphere.getDiameter();
-		zFar = zNear + diameter;
+		zFar = (zNear + diameter)*5.0f;
 		
 		final float ratio = (float) width / height;
 		final float left  = -ratio;
 		final float right = ratio;
 		final float bottom = -1.0f;
 		final float top = 1.0f;
-		final float near = zNear;
-		final float far = zFar*5.0f;
 		
-		Matrix.frustumM(projectionMatrix, 0, left, right, bottom, top, near, far);
+		Matrix.frustumM(projectionMatrix, 0, left, right, bottom, top, zNear, zFar);
 	}
 
 	@Override
 	public void onDrawFrame(GL10 gl) {		
 		GLES20.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-
-		GLES20.glUseProgram(vertexProgramID);
-		getVariablesFromShaders();
-                
+		
+		// Draw the mesh
+		GLES20.glUseProgram(textureLightProgram);
+		getVariablesFromShaders(textureLightProgram);
+		
 		float[] center = model.getSphere().getCenter();
         float diameter = model.getSphere().getDiameter();
         Matrix.setLookAtM(viewMatrix, 0, -posX, -posY, diameter, -posX, -posY, 0.0f, 0.0f, 1.0f, 0.0f);
         activateTextures();
         positionLight(diameter);
-
-        float[] P1 = new float[3];
-    	float[] P2 = new float[3];
-        if(userClicked)  	
-        	createRay(P1, P2);
-        
         positionModel(center);
-        model.draw(positionAttribute, normalAttribute, textCoordinateAttribute);
+        model.drawVNT(positionAttribute, normalAttribute, textCoordinateAttribute);
         
-        if(userClicked) {
-        	findIntersections(P1, P2);
+        if(userClicked) {   	
+        	createRay(P1, P2);
+        	Log.i(TAG, "P1: " + P1[0] + ", " + P1[1] + ", " + P1[2]);
+        	//Log.i(TAG, "P2: " + P2[0] + ", " + P2[1] + ", " + P2[2]);
+        	line = new Line(context, P1, P2);
+        	annotationPoints = findIntersections(P1, P2);       
 	        userClicked = false;
         }
+        
+        if(line != null)
+        	line.draw(MVPMatrix);
+        
+        /*GLES20.glUseProgram(noTextureLightProgram);
+    	getVariablesFromShaders(noTextureLightProgram);
+        for(float[] point: annotationPoints) {
+        	positionPushpin(point);
+    		pushPin.drawVNC(positionAttribute, normalAttribute, colorAttribute);
+    	}*/
+        
+        if(annotationPoints.size() == 2) {
+        	float[] firstPoint = annotationPoints.get(0);
+        	float[] secondPoint = annotationPoints.get(1);
+        	
+        	Line redline = new Line(context, firstPoint, secondPoint);
+        	redline.setColor(1.0f, 0.0f, 0.0f, 1.0f);
+        	redline.draw(MVPMatrix);
+        }
+    	/*positionModel(P1);
+    	pushPin.drawVNC(positionAttribute, normalAttribute, colorAttribute);
+    	positionModel(P2);
+    	pushPin.drawVNC(positionAttribute, normalAttribute, colorAttribute);*/
+    	
+        // Draw all annotation staff here
+        /*GLES20.glUseProgram(noTextureLightProgram);
+        getVariablesFromShaders(noTextureLightProgram);
+        
+        float[] pushPinCenter = pushPin.getSphere().getCenter();
+        positionModel(pushPinCenter);
+        
+        pushPin.drawVNC(positionAttribute, normalAttribute, colorAttribute);*/
+        
+        /*GLES20.glUseProgram(lightProgram);
+        drawLight();*/
 	}
 	
 	public void setLockedTranslation(boolean lockedTranslation) {
@@ -285,31 +318,33 @@ public class ViewerRenderer implements Renderer {
 	}
 	
 	private void drawLight() {
-		final int pointMVPMatrixID = GLES20.glGetUniformLocation(pointProgramID, "u_MVPMatrix");
-        final int pointPositionID = GLES20.glGetAttribLocation(pointProgramID, "a_Position");
+		final int pointMVPMatrixID = GLES20.glGetUniformLocation(lightProgram, "u_MVPMatrix");
+        final int pointPositionID = GLES20.glGetAttribLocation(lightProgram, "a_Position");
         
-		GLES20.glVertexAttrib3f(pointPositionID, lightPosInModelSpace[0], lightPosInModelSpace[1], lightPosInModelSpace[2]);
-
-        GLES20.glDisableVertexAttribArray(pointPositionID);  
+		GLES20.glVertexAttrib3f(pointPositionID, lightPosInModelSpace[0], lightPosInModelSpace[1], lightPosInModelSpace[2]);  
 		
-		Matrix.multiplyMM(MVPMatrix, 0, viewMatrix, 0, lightModelMatrix, 0);
-		Matrix.multiplyMM(MVPMatrix, 0, projectionMatrix, 0, MVPMatrix, 0);
+		Matrix.multiplyMM(MVMatrix, 0, viewMatrix, 0, lightModelMatrix, 0);
+		Matrix.multiplyMM(MVPMatrix, 0, projectionMatrix, 0, MVMatrix, 0);
 		GLES20.glUniformMatrix4fv(pointMVPMatrixID, 1, false, MVPMatrix, 0);
 		
 		// Draw the point.
 		GLES20.glDrawArrays(GLES20.GL_POINTS, 0, 1);
+		GLES20.glDisableVertexAttribArray(pointPositionID);
 	}
 	
-	private void getVariablesFromShaders() {
-		mvpMatrixUniform = GLES20.glGetUniformLocation(vertexProgramID, ShadersUtil.MVP_MATRIX_UNIFORM);
-        mvMatrixUniform = GLES20.glGetUniformLocation(vertexProgramID, ShadersUtil.MV_MATRIX_UNIFORM);
-        textureUniform = GLES20.glGetUniformLocation(vertexProgramID, ShadersUtil.TEXTURE_UNIFORM);
-        lightPosUniform = GLES20.glGetUniformLocation(vertexProgramID, ShadersUtil.LIGHT_POS_UNIFORM);
+	private void getVariablesFromShaders(int program) {
+		mvpMatrixUniform = GLES20.glGetUniformLocation(program, ShadersUtil.MVP_MATRIX_UNIFORM);
+        mvMatrixUniform = GLES20.glGetUniformLocation(program, ShadersUtil.MV_MATRIX_UNIFORM);
+        if(program == textureLightProgram)
+        	textureUniform = GLES20.glGetUniformLocation(program, ShadersUtil.TEXTURE_UNIFORM);
+        lightPosUniform = GLES20.glGetUniformLocation(program, ShadersUtil.LIGHT_POS_UNIFORM);
         
-        positionAttribute = GLES20.glGetAttribLocation(vertexProgramID, ShadersUtil.POSITION_ATTRIBUTE);
-        textCoordinateAttribute = GLES20.glGetAttribLocation(vertexProgramID, ShadersUtil.TEXTURE_COORDINATE_ATTRIBUTE);
-        normalAttribute = GLES20.glGetAttribLocation(vertexProgramID, ShadersUtil.NORMAL_ATTRIBUTE);
-        lightColorAttribute = GLES20.glGetAttribLocation(vertexProgramID, ShadersUtil.LIGHT_COLOR_ATTRIBUTE);
+        positionAttribute = GLES20.glGetAttribLocation(program, ShadersUtil.POSITION_ATTRIBUTE);
+        if(program == textureLightProgram)
+        	textCoordinateAttribute = GLES20.glGetAttribLocation(program, ShadersUtil.TEXTURE_COORDINATE_ATTRIBUTE);
+        else if(program == noTextureLightProgram)
+        	colorAttribute = GLES20.glGetAttribLocation(program, ShadersUtil.COLOR_ATTRIBUTE);
+        normalAttribute = GLES20.glGetAttribLocation(program, ShadersUtil.NORMAL_ATTRIBUTE);     
 	}
 	
 	private void activateTextures() {
@@ -334,14 +369,28 @@ public class ViewerRenderer implements Renderer {
         Matrix.rotateM(modelMatrix, 0, getRotY(), 0, 1, 0);
         Matrix.translateM(modelMatrix, 0, -center[0], -center[1], -center[2]);
         
-        Matrix.multiplyMM(MVPMatrix, 0, viewMatrix, 0, modelMatrix, 0);
-     	GLES20.glUniformMatrix4fv(mvMatrixUniform, 1, false, MVPMatrix, 0);
- 		Matrix.multiplyMM(temporaryMatrix, 0, projectionMatrix, 0, MVPMatrix, 0);
- 		System.arraycopy(temporaryMatrix, 0, MVPMatrix, 0, 16);
+        Matrix.multiplyMM(MVMatrix, 0, viewMatrix, 0, modelMatrix, 0);
+     	GLES20.glUniformMatrix4fv(mvMatrixUniform, 1, false, MVMatrix, 0);
+ 		Matrix.multiplyMM(MVPMatrix, 0, projectionMatrix, 0, MVMatrix, 0);
 		GLES20.glUniformMatrix4fv(mvpMatrixUniform, 1, false, MVPMatrix, 0);
 	}
 	
-	private void findIntersections(float[] P1, float[] P2) {
+	private void positionPushpin(float[] point) {
+		float[] center = pushPin.getSphere().getCenter();
+		
+		Matrix.setIdentityM(modelMatrix, 0);
+        Matrix.scaleM(modelMatrix, 0, getScaleFactor(), getScaleFactor(), getScaleFactor());
+        Matrix.rotateM(modelMatrix, 0, getRotX(), 1, 0, 0);
+        Matrix.rotateM(modelMatrix, 0, getRotY(), 0, 1, 0);
+        Matrix.translateM(modelMatrix, 0, point[0]-center[0], point[1]-center[1], point[2]-center[2]);
+        
+        Matrix.multiplyMM(MVMatrix, 0, viewMatrix, 0, modelMatrix, 0);
+     	GLES20.glUniformMatrix4fv(mvMatrixUniform, 1, false, MVMatrix, 0);
+ 		Matrix.multiplyMM(MVPMatrix, 0, projectionMatrix, 0, MVMatrix, 0);
+		GLES20.glUniformMatrix4fv(mvpMatrixUniform, 1, false, MVPMatrix, 0);
+	}
+	
+	private ArrayList<float[]> findIntersections(float[] P1, float[] P2) {
 		ArrayList<float[]> points = new ArrayList<float[]>();  
     	FloatBuffer vertexBuffer = model.getVertexBuffer();
         for(ModelPart part: model.getParts()) {
@@ -375,40 +424,39 @@ public class ViewerRenderer implements Renderer {
         		}
         	}
         }
+        return points;        
 	}
 	
 	private void createRay(float[] P1, float[] P2) {
 		float[] temp = new float[4];
 		float[] temp2 = new float[4];
 		
-		float[] MVMatrix = new float[16];
-		Matrix.multiplyMM(MVMatrix, 0, viewMatrix, 0, modelMatrix, 0);
+		float inverseY = viewport[3] - clickY;
+		Log.i(TAG, "(" + clickX + ", " + clickY + ")");
 		
-		int result = GLU.gluUnProject(clickX, (float) viewport[3] - clickY, 0.0f, MVMatrix, 0, projectionMatrix, 0, viewport, 0, temp, 0);
-		Matrix.multiplyMV(temp2, 0, MVMatrix, 0, temp, 0);
+		int result = GLU.gluUnProject(clickX, inverseY, 0.0f, MVMatrix, 0, projectionMatrix, 0, viewport, 0, temp, 0);
 		if(result == GL10.GL_TRUE) {
-			P1[0] = temp2[0] / temp2[3];
-			P1[1] = temp2[1] / temp2[3];
-            P1[2] = temp2[2] / temp2[3];
+			P1[0] = temp[0] / temp[3];
+			P1[1] = temp[1] / temp[3];
+            P1[2] = temp[2] / temp[3];
 		}
 		
-		result = GLU.gluUnProject(clickX, clickY, 1.0f, MVMatrix, 0, projectionMatrix, 0, viewport, 0, temp, 0);
-		Matrix.multiplyMV(temp2, 0, MVMatrix, 0, temp, 0);
+		result = GLU.gluUnProject(clickX, inverseY, 1.0f, MVMatrix, 0, projectionMatrix, 0, viewport, 0, temp2, 0);
 		if(result == GL10.GL_TRUE) {
 			P2[0] = temp2[0] / temp2[3];
 			P2[1] = temp2[1] / temp2[3];
             P2[2] = temp2[2] / temp2[3];
-		}		
+		}
 	}
 	
 	private boolean intersects(float[] v1, float[] v2, float[] v3, float[] P1, float[] P2, float[] hit) {
 		float[] normal = new float[3];
 		float[] intersectPos = new float[3];
 				
-		normal = MathHelper.crossProduct(MathHelper.minus(v2, v1), MathHelper.minus(v3, v1));
+		normal = MathHelper.crossProduct(MathHelper.sub(v2, v1), MathHelper.sub(v3, v1));
 		
-		float dist1 = MathHelper.dot(MathHelper.minus(P1, v1), normal);
-		float dist2 = MathHelper.dot(MathHelper.minus(P2, v1), normal);
+		float dist1 = MathHelper.dot(MathHelper.sub(P1, v1), normal);
+		float dist2 = MathHelper.dot(MathHelper.sub(P2, v1), normal);
 		
 		// line doesn't cross the triangle
 		if((dist1 * dist2) >= 0.0f)
@@ -418,19 +466,19 @@ public class ViewerRenderer implements Renderer {
 		if(dist1 == dist2) 
 			return false;
 		
-		intersectPos = MathHelper.add(v1, MathHelper.scalarProduct((-dist1/(dist2-dist1)), MathHelper.minus(v2, v1)));
+		intersectPos = MathHelper.add(P1, MathHelper.scalarProduct((-dist1/(dist2-dist1)), MathHelper.sub(P2, P1)));
 		
 		float[] test = new float[3];
-		test = MathHelper.crossProduct(normal, MathHelper.minus(v2, v1));
-		if(MathHelper.dot(test, MathHelper.minus(intersectPos, v1)) < 0.0f)
+		test = MathHelper.crossProduct(normal, MathHelper.sub(v2, v1));
+		if(MathHelper.dot(test, MathHelper.sub(intersectPos, v1)) < 0.0f)
 			return false;
 		
-		test = MathHelper.crossProduct(normal, MathHelper.minus(v3, v2));
-		if(MathHelper.dot(test, MathHelper.minus(intersectPos, v2)) < 0.0f)
+		test = MathHelper.crossProduct(normal, MathHelper.sub(v3, v2));
+		if(MathHelper.dot(test, MathHelper.sub(intersectPos, v2)) < 0.0f)
 			return false;
 		
-		test = MathHelper.crossProduct(normal, MathHelper.minus(v1, v3));
-		if(MathHelper.dot(test, MathHelper.minus(intersectPos, v1)) < 0.0f)
+		test = MathHelper.crossProduct(normal, MathHelper.sub(v1, v3));
+		if(MathHelper.dot(test, MathHelper.sub(intersectPos, v1)) < 0.0f)
 			return false;
 		
 		hit[0] = intersectPos[0];
@@ -438,5 +486,13 @@ public class ViewerRenderer implements Renderer {
 		hit[2] = intersectPos[2];
 		
 		return true;
+	}
+	
+	private void checkGlError(String op) {
+	    int error;
+	    while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
+	    	Log.d(TAG, op + ": glError " + error);
+	    	throw new RuntimeException(op + ": glError " + error);
+	    }
 	}
 }

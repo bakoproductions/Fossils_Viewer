@@ -15,6 +15,7 @@ import com.bakoproductions.fossilsviewer.objects.BoundingSphere;
 import com.bakoproductions.fossilsviewer.objects.Material;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
+import com.bakoproductions.fossilsviewer.util.Globals;
 import com.bakoproductions.fossilsviewer.util.Triangulator;
 import com.bakoproductions.fossilsviewer.util.Util;
 
@@ -37,6 +38,7 @@ public class OBJParser implements ModelParser {
 		Vector<Float> vertices = new Vector<Float>();
 		Vector<Float> normals = new Vector<Float>();
 		Vector<Float> textures = new Vector<Float>();
+		Vector<Float> colors = new Vector<Float>();
 		
 		Vector<Short> vertexPointers = new Vector<Short>();
 		Vector<Short> texturePointers = new Vector<Short>();
@@ -83,8 +85,11 @@ public class OBJParser implements ModelParser {
 				}else if(line.startsWith("v")){
 					//Log.d("Bako", "v");
 					String[] splitted = line.split("[ ]+");
- 
-					for(int i=1; i<splitted.length; i++){
+					
+					if(splitted.length < 4)
+						return WRONG_OBJ_FORMAT;
+					
+					for(int i=1; i <= Globals.THREE_DIM_ATTRS; i++){
 						float vertex = Float.valueOf(splitted[i]);
 						
 						if(i == 1){
@@ -99,6 +104,16 @@ public class OBJParser implements ModelParser {
 						}
 						
 						vertices.add(vertex);
+					}
+					
+					// If the line has three more attributes
+					// these attributes represent colors
+					if(splitted.length == 7) {
+						for(int i=4; i < 7; i++){
+							float color = Float.valueOf(splitted[i]);
+														
+							colors.add(color);
+						}
 					}
 				}else if(line.startsWith("f")){
 					String[] splitted = line.split("[ ]+");
@@ -185,6 +200,7 @@ public class OBJParser implements ModelParser {
 		}
 		
 		model.setVertices(vertices);
+		model.setColors(colors);		
 		model.setParts(parts);
 		model.buildVertexBuffer(vertexPointers);
 		

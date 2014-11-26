@@ -27,12 +27,16 @@ public class Model implements Parcelable{
 	private Context context;
 	
 	private Vector<Float> vertices;
+	private Vector<Float> colors;
 	private Vector<ModelPart> parts;
+	
 	private FloatBuffer vertexBuffer;
+	private FloatBuffer colorBuffer;
 	
 	private int[] bindedTextures;
 	
 	private int[] vbo;
+	private int[] cbo;
 	private int[] tbo;
 	private int[] nbo;
 	private int[] ibo;
@@ -87,11 +91,15 @@ public class Model implements Parcelable{
 	
 	public void bindBuffers() {
 		vbo = new int[1];
+		if(colorBuffer != null)
+			cbo = new int[1];
 		tbo = new int[parts.size()];
 		nbo = new int[parts.size()];
 		ibo = new int[parts.size()];
 		
 		GLES20.glGenBuffers(1, vbo, 0);
+		if(colorBuffer != null)
+			GLES20.glGenBuffers(1, cbo, 0);
 		GLES20.glGenBuffers(parts.size(), tbo, 0);
 		GLES20.glGenBuffers(parts.size(), nbo, 0);
 		GLES20.glGenBuffers(parts.size(), ibo, 0);
@@ -100,6 +108,11 @@ public class Model implements Parcelable{
 			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0]);
 			GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vertexBuffer.capacity() * BYTES_PER_FLOAT,	vertexBuffer, GLES20.GL_STATIC_DRAW);
 			
+			if(colorBuffer != null && cbo[0] > 0) {
+				GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, cbo[0]);
+				GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, colorBuffer.capacity() * BYTES_PER_FLOAT, colorBuffer, GLES20.GL_STATIC_DRAW);
+			}
+			
 			for(int i=0;i<parts.size();i++) {
 				ModelPart part = parts.get(i);
 				
@@ -107,6 +120,13 @@ public class Model implements Parcelable{
 			}
 		}
 	}
+	
+	/**
+     * @deprecated
+     * This kind of rendering used to work in 
+     * the old fixed pipeline. It uses the re-
+     * ference to GL10
+     */
 	
 	public void draw(GL10 gl){
 		gl.glEnableClientState(GL10.GL_NORMAL_ARRAY);
@@ -143,7 +163,7 @@ public class Model implements Parcelable{
 		}
 	}
 	
-	public void draw(int positionId, int normalId, int textureId) {
+	public void drawVNT(int positionId, int normalId, int textureId) {
 		if(vbo[0] > 0) {
 			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0]);
 			GLES20.glVertexAttribPointer(positionId, Globals.THREE_DIM_ATTRS, GLES20.GL_FLOAT, false, 0, 0);
@@ -175,6 +195,37 @@ public class Model implements Parcelable{
 		}
 	}
 	
+	public void drawVNC(int positionId, int normalId, int colorId) {
+		if(vbo[0] > 0) {
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo[0]);
+			GLES20.glVertexAttribPointer(positionId, Globals.THREE_DIM_ATTRS, GLES20.GL_FLOAT, false, 0, 0);
+			GLES20.glEnableVertexAttribArray(positionId);
+			
+			GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, cbo[0]);
+			GLES20.glVertexAttribPointer(colorId, Globals.THREE_DIM_ATTRS, GLES20.GL_FLOAT, false, 0, 0);
+			GLES20.glEnableVertexAttribArray(colorId);
+			
+			for(int i=0;i<parts.size();i++) {
+				ModelPart part = parts.get(i);
+				
+				if(nbo[i] > 0 && tbo[i] > 0 && ibo[i] > 0) {
+					GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, nbo[i]);
+					GLES20.glVertexAttribPointer(normalId, Globals.THREE_DIM_ATTRS, GLES20.GL_FLOAT, false, 0, 0);
+					GLES20.glEnableVertexAttribArray(normalId);
+					GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+					
+					GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, ibo[i]);
+					GLES20.glDrawElements(GLES20.GL_TRIANGLES, part.getFaceBuffer().capacity(), GLES20.GL_UNSIGNED_SHORT, 0);
+					GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0);
+				}
+			}
+			
+			GLES20.glDisableVertexAttribArray(normalId);
+			GLES20.glDisableVertexAttribArray(colorId);
+			GLES20.glDisableVertexAttribArray(positionId);
+		}
+	}
+	
 	public void buildVertexBuffer(Vector<Short> vertexPointers){
 		ByteBuffer vBuf = ByteBuffer.allocateDirect(vertexPointers.size() * BYTES_PER_FLOAT * THREE_DIM_ATTRS);
 		vBuf.order(ByteOrder.nativeOrder());
@@ -187,10 +238,31 @@ public class Model implements Parcelable{
 			vertexBuffer.put(vertices.get(index * THREE_DIM_ATTRS + 2));
 		}
 		vertexBuffer.position(0);
+		
+		// If we have colors alongside vertices
+		// we use our vertex pointers sorting
+		// to put them in a different buffer
+		if(colors.size() != 0) {
+			ByteBuffer cBuf = ByteBuffer.allocateDirect(vertexPointers.size() * BYTES_PER_FLOAT * THREE_DIM_ATTRS);
+			cBuf.order(ByteOrder.nativeOrder());
+			colorBuffer = cBuf.asFloatBuffer();
+			for(int i=0;i<vertexPointers.size();i++){
+				int index = vertexPointers.get(i);
+				
+				colorBuffer.put(colors.get(index * THREE_DIM_ATTRS));
+				colorBuffer.put(colors.get(index * THREE_DIM_ATTRS + 1));
+				colorBuffer.put(colors.get(index * THREE_DIM_ATTRS + 2));
+			}
+			colorBuffer.position(0);
+		}
 	}
 	
 	public void setVertices(Vector<Float> vertices) {
 		this.vertices = vertices;
+	}
+	
+	public void setColors(Vector<Float> colors) {
+		this.colors = colors;
 	}
 	
 	public Vector<ModelPart> getParts() {
@@ -218,6 +290,11 @@ public class Model implements Parcelable{
 		return vertexBuffer;
 	}
 	
+	public FloatBuffer getColorBuffer() {
+		colorBuffer.position(0);
+		return colorBuffer;
+	}
+	
 	public void printVertexBuffer() {
 		for(int i=0;i<vertexBuffer.capacity();i++) {
 			Log.i(Model.class.getSimpleName(), "" + vertexBuffer.get(i));
@@ -235,12 +312,20 @@ public class Model implements Parcelable{
 	
 	public Model(Parcel parcel) {
 		float[] vertexArray = parcel.createFloatArray();
-		
-		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(vertexArray.length * BYTES_PER_FLOAT);
-		byteBuffer.order(ByteOrder.nativeOrder());
-		vertexBuffer = byteBuffer.asFloatBuffer();
+		ByteBuffer vertexByteBuffer = ByteBuffer.allocateDirect(vertexArray.length * BYTES_PER_FLOAT);
+		vertexByteBuffer.order(ByteOrder.nativeOrder());
+		vertexBuffer = vertexByteBuffer.asFloatBuffer();
 		vertexBuffer.put(vertexArray);
 		vertexBuffer.position(0);
+		
+		float[] colorArray = parcel.createFloatArray();
+		if(colorArray.length != 0) {
+			ByteBuffer colorByteBuffer = ByteBuffer.allocateDirect(colorArray.length * BYTES_PER_FLOAT);
+			colorByteBuffer.order(ByteOrder.nativeOrder());
+			colorBuffer = colorByteBuffer.asFloatBuffer();
+			colorBuffer.put(colorArray);
+			colorBuffer.position(0);
+		}
 		
 		sphere = parcel.readParcelable(BoundingSphere.class.getClassLoader());
 		
@@ -260,7 +345,6 @@ public class Model implements Parcelable{
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
 		float[] vertexArray = Util.toFloatArray(vertexBuffer);
-		//ModelPart[] partArray = parts.toArray(new ModelPart[parts.size()]);
 		
 		ArrayList<ModelPart> partList = new ArrayList<ModelPart>();
 		for(int i=0;i<parts.size();i++) {
@@ -268,6 +352,11 @@ public class Model implements Parcelable{
 		}
 		
 		dest.writeFloatArray(vertexArray);
+		if(colorBuffer != null) {
+			float[] colorArray = Util.toFloatArray(colorBuffer);
+			dest.writeFloatArray(colorArray);
+		}
+		
 		dest.writeParcelable(sphere, flags);
 		dest.writeList(partList);
 	}

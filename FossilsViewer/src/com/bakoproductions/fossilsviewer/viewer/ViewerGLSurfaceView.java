@@ -84,10 +84,10 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 		@Override
 		public void onClick(ClickDetector clickDetector, int x, int y) {
 			if(!longPressDetector.isInProgress()) { 
-				Intent intent = new Intent(context, ARActivity.class);
+				/*Intent intent = new Intent(context, ARActivity.class);
 				intent.putExtra("model", renderer.getModel());
 				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				context.startActivity(intent);
+				context.startActivity(intent);*/
 			}
 		}
 	}

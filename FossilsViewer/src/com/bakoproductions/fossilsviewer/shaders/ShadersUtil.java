@@ -13,6 +13,7 @@ public class ShadersUtil {
 
 	public static final String POSITION_ATTRIBUTE = "a_Position";
 	public static final String NORMAL_ATTRIBUTE = "a_Normal";
+	public static final String COLOR_ATTRIBUTE = "a_Color";
 	public static final String TEXTURE_COORDINATE_ATTRIBUTE = "a_TexCoordinate";
 	public static final String LIGHT_COLOR_ATTRIBUTE = "a_LightColor";
 	

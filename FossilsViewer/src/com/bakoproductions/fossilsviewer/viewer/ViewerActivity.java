@@ -26,7 +26,7 @@ public class ViewerActivity extends SherlockActivity {
 	private ViewerGLSurfaceView glSurfaceView;
 	private ViewerRenderer renderer;
 	private Model model;
-	private OBJParser objParser;
+	private Model pushPin;
 	private DialogHandler dialogHandler;
 	
 	private boolean modelParsed;
@@ -54,9 +54,13 @@ public class ViewerActivity extends SherlockActivity {
 		// try to retrieve the object
 		if(savedInstanceState != null) {
 			model = savedInstanceState.getParcelable("model");
+			
+			if(savedInstanceState.containsKey("pushPin"))
+				pushPin = savedInstanceState.getParcelable("pushPin");
+			
 			if(model != null) {			
 				modelParsed = true;
-				renderer = new ViewerRenderer(this, model);
+				renderer = new ViewerRenderer(this, model, pushPin);
 				glSurfaceView.setEGLConfigChooser(true);
 				glSurfaceView.start(renderer);	
 				
@@ -112,6 +116,9 @@ public class ViewerActivity extends SherlockActivity {
 		
 		if(model != null)
 			outState.putParcelable("model", model);
+		
+		if(pushPin != null)
+			outState.putParcelable("pushPin", pushPin);
 		
 		if(renderer != null) {
 			outState.putBoolean("lockedTranslation", renderer.isLockedTranslation());
@@ -202,6 +209,8 @@ public class ViewerActivity extends SherlockActivity {
 		private Context context;
 		private String parentPath;
 		private String file;
+		private OBJParser modelParser;
+		private OBJParser pushPinParser;
 		
 		public ParsingTask(Context context, String parentPath, String file) {
 			this.context = context;
@@ -220,13 +229,15 @@ public class ViewerActivity extends SherlockActivity {
 			glSurfaceView.setVisibility(View.INVISIBLE);
 			
 			model = new Model(context);
-			objParser = new OBJParser(context, parentPath, file);
-
+			pushPin = new Model(context);
+			modelParser = new OBJParser(context, parentPath, file);
+			pushPinParser = new OBJParser(context, "extra/pushpin", "extra/pushpin/pushpin.obj");
 			super.onPreExecute();
 		}
 		@Override
 		protected Integer doInBackground(Void... params) {
-			int resultOBJ = objParser.parse(model);
+			int resultOBJ = modelParser.parse(model);
+			pushPinParser.parse(pushPin);
 			return resultOBJ;
 		}
 		
@@ -239,7 +250,7 @@ public class ViewerActivity extends SherlockActivity {
 			}
 			
 			modelParsed = true;
-			renderer = new ViewerRenderer(ViewerActivity.this, model);
+			renderer = new ViewerRenderer(ViewerActivity.this, model, pushPin);
 			glSurfaceView.setEGLConfigChooser(true);
 			glSurfaceView.start(renderer);
 			

@@ -9,7 +9,7 @@ public class MathHelper {
         return ((u[X] * v[X]) + (u[Y] * v[Y]) + (u[Z] * v[Z]));
     }
 	
-    public static float[] minus(float[] u, float[] v){
+    public static float[] sub(float[] u, float[] v){
         return new float[]{u[X]-v[X],u[Y]-v[Y],u[Z]-v[Z]};
     }
     
