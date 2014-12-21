@@ -1,27 +1,28 @@
 package com.bakoproductions.fossilsviewer.viewer;
 
 import android.content.Context;
-import android.content.Intent;
 import android.opengl.GLSurfaceView;
+import android.os.Handler;
+import android.os.Message;
 import android.os.Vibrator;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
+import android.widget.Toast;
 
-import com.bakoproductions.fossilsviewer.ar.ARActivity;
+import com.bakoproductions.fossilsviewer.R;
+import com.bakoproductions.fossilsviewer.annotations.AddAnnotationDialog;
+import com.bakoproductions.fossilsviewer.annotations.DeleteAnnotationDialog;
+import com.bakoproductions.fossilsviewer.annotations.Popup;
 import com.bakoproductions.fossilsviewer.gestures.ClickDetector;
-import com.bakoproductions.fossilsviewer.gestures.LongPressDetector;
 import com.bakoproductions.fossilsviewer.gestures.RotationDetector;
 import com.bakoproductions.fossilsviewer.gestures.TranslationDetector;
-import com.bakoproductions.fossilsviewer.viewer.ViewerActivity.DialogHandler;
 
 public class ViewerGLSurfaceView extends GLSurfaceView {
 	private Context context;
 	private ViewerRenderer renderer;
-	private DialogHandler dialogHanlder;
 	
 	private ClickDetector clickDetector;
-	private LongPressDetector longPressDetector;
 	private ScaleGestureDetector scaleDetector;
 	private TranslationDetector translationDetector;
     private RotationDetector rotationDetector;
@@ -30,8 +31,7 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 		super(context);
 		this.context = context;
 		
-		clickDetector = new ClickDetector(new ClickListener());
-		longPressDetector = new LongPressDetector(new LongPressListener());
+	    clickDetector = new ClickDetector(new ClickListener(), new LongPressListener());
 		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 		translationDetector = new TranslationDetector(new TranslationListener());
 		rotationDetector = new RotationDetector(new RotationListener());
@@ -42,8 +42,7 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 	    super(context, attribs);
 	    this.context = context;
 	    
-	    clickDetector = new ClickDetector(new ClickListener());
-		longPressDetector = new LongPressDetector(new LongPressListener());
+	    clickDetector = new ClickDetector(new ClickListener(), new LongPressListener());
 		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 		translationDetector = new TranslationDetector(new TranslationListener());
 		rotationDetector = new RotationDetector(new RotationListener());
@@ -66,43 +65,45 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 		setRenderer(renderer);
 	}
 	
-	public void setHandler(DialogHandler dialogHandler) {
-		this.dialogHanlder = dialogHandler;
+	public DialogHandler getDialogHandler() {
+		return new DialogHandler();
 	}
 	
 	@Override
-	public boolean onTouchEvent(MotionEvent event) {
+	public boolean onTouchEvent(MotionEvent event) {		
 		clickDetector.onTouchEvent(event);
-		longPressDetector.onTouchEvent(event);
-		rotationDetector.onTouchEvent(event);
+		
 		scaleDetector.onTouchEvent(event);
-		translationDetector.onTouchEvent(event);
+		if(scaleDetector.isInProgress()) 
+			return true;
+	    
+		boolean rotated = rotationDetector.onTouchEvent(event);
+		boolean translated = translationDetector.onTouchEvent(event);
+		
+		if(rotated || translated)
+			return true;
+		
 		return true;
 	}
 	
 	private class ClickListener implements ClickDetector.OnClickListener {
 		@Override
 		public void onClick(ClickDetector clickDetector, int x, int y) {
-			if(!longPressDetector.isInProgress()) { 
-				/*Intent intent = new Intent(context, ARActivity.class);
-				intent.putExtra("model", renderer.getModel());
-				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				context.startActivity(intent);*/
-			}
+			renderer.setUserRequestedPopup(true);
+			renderer.setClickX(x);
+			renderer.setClickY(y);
 		}
 	}
 	
-	private class LongPressListener implements LongPressDetector.OnLongClickListener {
+	private class LongPressListener implements ClickDetector.OnLongClickListener {
 		@Override
-		public void onLongClick(LongPressDetector longPressDetector, float x, float y) {
+		public void onLongClick(ClickDetector longPressDetector, float x, float y) {
 			Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
 			vibrator.vibrate(100);
 			
-			renderer.setUserClicked(true);
+			renderer.setUserRequestedAnnotation(true);
 			renderer.setClickX(x);
 			renderer.setClickY(y);
-			
-			//dialogHanlder.sendEmptyMessage(0);
 		}
 	}
 	
@@ -178,5 +179,32 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 	    	}
 	    	return false;
 	    }
+	}
+	
+	public class DialogHandler extends Handler {
+		public static final int ADD_ANNOTATION = 0;
+		public static final int REMOVE_ANNOTATION = 1;
+		public static final int OPEN_ANNOTATION = 2;
+		public static final int MOVE_ANNOTATION = 3;
+		public static final int NO_HIT = 4;
+		
+		private Popup popup;
+		
+		@Override
+		public void handleMessage(Message msg) {
+			if(msg.what == ADD_ANNOTATION) {
+				new AddAnnotationDialog(context, msg, renderer);
+			} else if (msg.what == REMOVE_ANNOTATION) {
+				new DeleteAnnotationDialog(context, msg, renderer);
+			} else if (msg.what == OPEN_ANNOTATION) {
+				popup = new Popup(context, msg, renderer);	
+			} else if (msg.what == MOVE_ANNOTATION) { 
+				//if(popup != null && popup.isOpened()) {
+				//	popup.update(renderer., y)
+				//}
+			} else if (msg.what == NO_HIT) {
+				Toast.makeText(context, R.string.toast_try_long_click_on_object, Toast.LENGTH_SHORT).show();
+			}
+		}
 	}
 }

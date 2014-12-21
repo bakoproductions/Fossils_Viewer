@@ -2,13 +2,12 @@ package com.bakoproductions.fossilsviewer.viewer;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ConfigurationInfo;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -18,6 +17,7 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.bakoproductions.fossilsviewer.R;
+import com.bakoproductions.fossilsviewer.ar.ARActivity;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.parsers.ModelParser;
 import com.bakoproductions.fossilsviewer.parsers.OBJParser;
@@ -25,9 +25,9 @@ import com.bakoproductions.fossilsviewer.parsers.OBJParser;
 public class ViewerActivity extends SherlockActivity {
 	private ViewerGLSurfaceView glSurfaceView;
 	private ViewerRenderer renderer;
+	private String file;
 	private Model model;
 	private Model pushPin;
-	private DialogHandler dialogHandler;
 	
 	private boolean modelParsed;
 	
@@ -45,9 +45,7 @@ public class ViewerActivity extends SherlockActivity {
         	return;
         }
 		
-		dialogHandler = new DialogHandler();
 		glSurfaceView = (ViewerGLSurfaceView) findViewById(R.id.glSurfaceView);
-		glSurfaceView.setHandler(dialogHandler);
 		modelParsed = false;
 		
 		// If retain the instance of the activity
@@ -55,17 +53,20 @@ public class ViewerActivity extends SherlockActivity {
 		if(savedInstanceState != null) {
 			model = savedInstanceState.getParcelable("model");
 			
+			if(savedInstanceState.containsKey("file"))
+				file = savedInstanceState.getString("file");
+			
 			if(savedInstanceState.containsKey("pushPin"))
 				pushPin = savedInstanceState.getParcelable("pushPin");
 			
 			if(model != null) {			
 				modelParsed = true;
-				renderer = new ViewerRenderer(this, model, pushPin);
+				renderer = new ViewerRenderer(this, file, model, pushPin);
 				glSurfaceView.setEGLConfigChooser(true);
 				glSurfaceView.start(renderer);	
 				
+				renderer.setHandler(glSurfaceView.getDialogHandler());
 				renderer.setLockedTranslation(savedInstanceState.getBoolean("lockedTranslation"));
-				renderer.setClosedLight(savedInstanceState.getBoolean("closedLight"));
 								
 				renderer.setPosX(savedInstanceState.getFloat("posX"));
 				renderer.setPosY(savedInstanceState.getFloat("posY"));
@@ -84,7 +85,7 @@ public class ViewerActivity extends SherlockActivity {
 		// try to read the object from the 'file'
 		Bundle extras = getIntent().getExtras();
 		String path = extras.getString("path");
-		String file = extras.getString("file");
+		file = extras.getString("file");
 		
 		ParsingTask task = new ParsingTask(getApplicationContext(), path, file);
 		task.execute();
@@ -96,8 +97,6 @@ public class ViewerActivity extends SherlockActivity {
 		
 		if(modelParsed == true)
 			glSurfaceView.onPause();
-		/*if(renderer != null)
-			renderer.onPause();*/
 	}
 	
 	@Override
@@ -106,8 +105,6 @@ public class ViewerActivity extends SherlockActivity {
 		
 		if(modelParsed == true)
 			glSurfaceView.onResume();
-		/*if(renderer != null)
-			renderer.onResume();*/
 	}
 	
 	@Override
@@ -117,12 +114,14 @@ public class ViewerActivity extends SherlockActivity {
 		if(model != null)
 			outState.putParcelable("model", model);
 		
+		if(file != null)
+			outState.putString("file", file);
+		
 		if(pushPin != null)
 			outState.putParcelable("pushPin", pushPin);
 		
 		if(renderer != null) {
 			outState.putBoolean("lockedTranslation", renderer.isLockedTranslation());
-			outState.putBoolean("closedLight", renderer.isClosedLight());
 			
 			outState.putFloat("posX", renderer.getPosX());
 			outState.putFloat("posY", renderer.getPosY());
@@ -145,14 +144,12 @@ public class ViewerActivity extends SherlockActivity {
 		MenuItem actionCenter = menu.findItem(R.id.action_center);
 		MenuItem actionUnlockTranslation = menu.findItem(R.id.action_unlock_translation);
 		MenuItem actionLockTranslation = menu.findItem(R.id.action_lock_translation);
-		MenuItem actionCloseLight = menu.findItem(R.id.action_close_light);
-		MenuItem actionOpenLight = menu.findItem(R.id.action_open_light);
+		MenuItem actionOpenAr = menu.findItem(R.id.action_ar);
 		
 		actionCenter.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 		actionUnlockTranslation.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 		actionLockTranslation.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-		actionCloseLight.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-		actionOpenLight.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		actionOpenAr.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 		
 		if(renderer.isLockedTranslation()) {
 			actionUnlockTranslation.setVisible(true);
@@ -160,14 +157,6 @@ public class ViewerActivity extends SherlockActivity {
 		} else {
 			actionUnlockTranslation.setVisible(false);
 			actionLockTranslation.setVisible(true);
-		}
-		
-		if(renderer.isClosedLight()) {
-			actionCloseLight.setVisible(false);
-			actionOpenLight.setVisible(true);
-		} else {
-			actionCloseLight.setVisible(true);
-			actionOpenLight.setVisible(false);
 		}
 		
 		return true;
@@ -190,12 +179,14 @@ public class ViewerActivity extends SherlockActivity {
 			renderer.setLockedTranslation(false);
 			supportInvalidateOptionsMenu();
 			break;
-		case R.id.action_close_light:
-			renderer.setClosedLight(true);
-			supportInvalidateOptionsMenu();
-			break;
-		case R.id.action_open_light:
-			renderer.setClosedLight(false);
+		case R.id.action_ar:
+			Intent intent = new Intent(this, ARActivity.class);
+			intent.putExtra("model", renderer.getModel());
+			intent.putExtra("pushPin", renderer.getPushPin());
+			intent.putExtra("file", renderer.getFilePath());
+			
+			startActivity(intent);
+			
 			supportInvalidateOptionsMenu();
 			break;
 		default:
@@ -250,7 +241,8 @@ public class ViewerActivity extends SherlockActivity {
 			}
 			
 			modelParsed = true;
-			renderer = new ViewerRenderer(ViewerActivity.this, model, pushPin);
+			renderer = new ViewerRenderer(ViewerActivity.this, file, model, pushPin);
+			renderer.setHandler(glSurfaceView.getDialogHandler());
 			glSurfaceView.setEGLConfigChooser(true);
 			glSurfaceView.start(renderer);
 			
@@ -274,12 +266,5 @@ public class ViewerActivity extends SherlockActivity {
 	
 	private void unlockScreenOrientation() {
 	    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-	}
-	
-	public class DialogHandler extends Handler {
-		@Override
-		public void handleMessage(Message msg) {
-			AnnotationDialog dialog = new AnnotationDialog(ViewerActivity.this);
-		}
 	}
 }

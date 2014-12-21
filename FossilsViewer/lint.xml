@@ -2,5 +2,7 @@
 <lint>
     <issue id="ClickableViewAccessibility" severity="ignore" />
     <issue id="HandlerLeak" severity="ignore" />
+    <issue id="InflateParams" severity="ignore" />
+    <issue id="NewApi" severity="ignore" />
     <issue id="UseSparseArrays" severity="ignore" />
 </lint>

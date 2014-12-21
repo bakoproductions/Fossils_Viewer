@@ -2,17 +2,13 @@ package com.bakoproductions.fossilsviewer.ar;
 
 import javax.microedition.khronos.opengles.GL10;
 
-import android.view.ScaleGestureDetector;
-
-import com.bakoproductions.fossilsviewer.gestures.RotationDetector;
-import com.bakoproductions.fossilsviewer.gestures.TranslationDetector;
 import com.bakoproductions.fossilsviewer.objects.Model;
 
 import edu.dhbw.andar.ARObject;
 
 public class CustomObject extends ARObject {
 	private Model model;
-
+	
 	/* ====== Touch events parameters ====== */
 	private float scaleFactor = 1.0f;
 	   
@@ -22,7 +18,7 @@ public class CustomObject extends ARObject {
     private float rotX = 0.0f;
     private float rotY = 0.0f;
     /* ===================================== */
-    
+	
 	public CustomObject(String name, String patternName, double markerWidth, double[] markerCenter, Model model) {
 		super(name, patternName, markerWidth, markerCenter);
 
@@ -32,20 +28,20 @@ public class CustomObject extends ARObject {
 	@Override
 	public void init(GL10 gl) {
 		gl.glEnable(GL10.GL_TEXTURE_2D);
-		
-		model.prepareTextures();
+		model.prepareTextures(gl);
 	}
 	
 	@Override
 	public final void draw(GL10 gl) {
 		super.draw(gl);
+		
 		float[] center = model.getSphere().getCenter();
 		
 		gl.glScalef(scaleFactor, scaleFactor, scaleFactor);
 		gl.glRotatef(rotX, 1, 0, 0);
 		gl.glRotatef(rotY, 0, 1, 0);
 		gl.glTranslatef(-center[0], -center[1], -center[2]);
-		model.draw(gl);						
+		model.draw(gl);
 	}
 	
 	public float getScaleFactor() {
@@ -86,5 +82,9 @@ public class CustomObject extends ARObject {
 	
 	public void setRotY(float rotY) {
 		this.rotY = rotY;
+	}
+	
+	public Model getModel() {
+		return model;
 	}
 }

@@ -86,7 +86,7 @@ public class RotationDetector {
 		        
 		        lastTouchX = x;
 		        lastTouchY = y;
-		        break;
+		        return true;
 			} case MotionEvent.ACTION_UP: {
 				int pointerIndex = event.getActionIndex();
 				int pointerId = event.getPointerId(pointerIndex);
@@ -107,7 +107,7 @@ public class RotationDetector {
 			}
 		}
     	
-		return true;
+		return false;
 	}
 	
 	public static interface OnRotationListener{

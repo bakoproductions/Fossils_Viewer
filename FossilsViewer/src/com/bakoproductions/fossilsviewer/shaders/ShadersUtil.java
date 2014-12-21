@@ -16,6 +16,7 @@ public class ShadersUtil {
 	public static final String COLOR_ATTRIBUTE = "a_Color";
 	public static final String TEXTURE_COORDINATE_ATTRIBUTE = "a_TexCoordinate";
 	public static final String LIGHT_COLOR_ATTRIBUTE = "a_LightColor";
+	public static final String TEXTURE_ENABLED_ATTRIBUTE = "a_TextureEnabled";
 	
 	private String vertexShader;
 	private String fragmentShader; 

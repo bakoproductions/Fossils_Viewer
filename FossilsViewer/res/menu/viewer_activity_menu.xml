@@ -22,15 +22,9 @@
         android:title="@string/action_lock_translation"  />
     
     <item
-        android:id="@+id/action_open_light"
-        android:icon="@drawable/action_open_light_selector"
+        android:id="@+id/action_ar"
+        android:icon="@drawable/action_ar_selector"
         android:orderInCategory="102"
-        android:title="@string/action_open_light"  />
-    
-    <item
-        android:id="@+id/action_close_light"
-        android:icon="@drawable/action_close_light_selector"
-        android:orderInCategory="102"
-        android:title="@string/action_close_light"  />
+        android:title="@string/action_ar"  />
 
 </menu>

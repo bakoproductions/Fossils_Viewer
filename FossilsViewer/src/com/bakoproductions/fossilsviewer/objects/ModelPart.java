@@ -76,17 +76,26 @@ public class ModelPart implements Parcelable{
 	}
 	
 	public void buildTextureBuffer(Vector<Float> textures){
-		ByteBuffer byteBuffer = ByteBuffer.allocateDirect(texturePointers.size() * BYTES_PER_FLOAT * TWO_DIM_ATTRS);
-		byteBuffer.order(ByteOrder.nativeOrder());
-		textureBuffer = byteBuffer.asFloatBuffer();
-
-		for(int i=0; i<texturePointers.size(); i++){
-			int index = texturePointers.get(i);
-			
-			textureBuffer.put(textures.get(index * TWO_DIM_ATTRS));
-			textureBuffer.put(1 - textures.get(index * TWO_DIM_ATTRS + 1));
+		if(texturePointers.size() != 0) {
+			ByteBuffer byteBuffer = ByteBuffer.allocateDirect(texturePointers.size() * BYTES_PER_FLOAT * TWO_DIM_ATTRS);
+			byteBuffer.order(ByteOrder.nativeOrder());
+			textureBuffer = byteBuffer.asFloatBuffer();
+	
+			for(int i=0; i<texturePointers.size(); i++){
+				int index = texturePointers.get(i);
+				
+				textureBuffer.put(textures.get(index * TWO_DIM_ATTRS));
+				textureBuffer.put(1 - textures.get(index * TWO_DIM_ATTRS + 1));
+			}
+			textureBuffer.position(0);
+		} else {
+			ByteBuffer byteBuffer = ByteBuffer.allocateDirect(BYTES_PER_FLOAT * TWO_DIM_ATTRS);
+			byteBuffer.order(ByteOrder.nativeOrder());
+			textureBuffer = byteBuffer.asFloatBuffer();
+			textureBuffer.put(1.0f);
+			textureBuffer.put(1.0f);
+			textureBuffer.position(0);
 		}
-		textureBuffer.position(0);	
 	}
 	
 	public FloatBuffer getNormalBuffer(){

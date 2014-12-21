@@ -18,6 +18,8 @@ public class ARActivity extends AndARActivity {
 	ARToolkit artoolkit;
 	
 	Model model;
+	Model pushPin;
+	String filePath;
 	OBJParser objParser;
 	
 	@Override
@@ -36,6 +38,7 @@ public class ARActivity extends AndARActivity {
 		
 		object = new CustomObject("test", "android.patt", 80.0, new double[]{0,0}, model);
 		renderer = new ARRenderer(this, object);
+		
 		super.setNonARRenderer(renderer);
 		
 		try {

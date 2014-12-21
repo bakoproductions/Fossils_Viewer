@@ -17,6 +17,14 @@ public class BoundingSphere implements Parcelable{
 		this.diameter = diameter;
 	}
 	
+	public void setCenter(float[] center) {
+		this.center = center;
+	}
+	
+	public void setDiameter(float diameter) {
+		this.diameter = diameter;
+	}
+	
 	public float[] getCenter() {
 		return center;
 	}

@@ -5,8 +5,8 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 import android.content.Context;
-import android.graphics.Canvas.VertexMode;
 import android.opengl.GLES20;
+import android.opengl.Matrix;
 
 import com.bakoproductions.fossilsviewer.R;
 import com.bakoproductions.fossilsviewer.shaders.ShadersUtil;
@@ -39,23 +39,31 @@ public class Line {
 	    program = lineShaders.linkShaders();
 	}
 	
+	public void position(float[] modelMatrix, float[] pos, float[] rot, float scale) {
+		Matrix.setIdentityM(modelMatrix, 0);
+        Matrix.scaleM(modelMatrix, 0, scale, scale, scale);
+        Matrix.rotateM(modelMatrix, 0, rot[0], 1, 0, 0);
+        Matrix.rotateM(modelMatrix, 0, rot[1], 0, 1, 0);
+        Matrix.translateM(modelMatrix, 0, pos[0], pos[1], pos[2]);
+	}
 	
-	public void draw(float[] mvpMatrix) {
+	public void draw(float[] modelMatrix, float[] viewMatrix, float[] projectionMatrix, float[] MVMatrix, float[] MVPMatrix) {
 	    GLES20.glUseProgram(program);
-
+	    
+	    Matrix.multiplyMM(MVMatrix, 0, viewMatrix, 0, modelMatrix, 0);
+ 		Matrix.multiplyMM(MVPMatrix, 0, projectionMatrix, 0, MVMatrix, 0);
+ 		
 	    int positionId = GLES20.glGetAttribLocation(program, "a_Position");
-
-	    GLES20.glEnableVertexAttribArray(positionId);
-	    GLES20.glVertexAttribPointer(positionId, 3, GLES20.GL_FLOAT, false, 3 * 4, vertexBuffer);
 	    int colorId = GLES20.glGetUniformLocation(program, "u_Color");
-	    GLES20.glUniform4fv(colorId, 1, color, 0);
-
-
 	    int MVPMatrixId = GLES20.glGetUniformLocation(program, "u_MVPMatrix");
-	    GLES20.glUniformMatrix4fv(MVPMatrixId, 1, false, mvpMatrix, 0);
-
+	    
+	    GLES20.glEnableVertexAttribArray(positionId);
+	    GLES20.glVertexAttribPointer(positionId, 3, GLES20.GL_FLOAT, false, 3 * 4, vertexBuffer);   
+	    GLES20.glUniform4fv(colorId, 1, color, 0);	    
+	    GLES20.glUniformMatrix4fv(MVPMatrixId, 1, false, MVPMatrix, 0);
 	    
 	    GLES20.glDrawArrays(GLES20.GL_LINES, 0, lineCoords.length / 3);
+	    
 	    GLES20.glDisableVertexAttribArray(positionId);
 	}
 	

@@ -50,15 +50,21 @@ public class TranslationDetector {
     			break;
     		} case MotionEvent.ACTION_MOVE: {
     			final int pointerIndex = event.findPointerIndex(activePointerId);
+    			if(pointerIndex == -1)
+    				return false;
+    			
     			final float x = event.getX(pointerIndex);
 		        final float y = event.getY(pointerIndex);		      
 	            
+		        if(Math.abs(x - lastTouchX) < 0.5 && Math.abs(y - lastTouchY) < 0.5)
+		        	return false;
+		        
 	            if(listener != null)
 	            	listener.onTranslation(this, x, y);
     			
 	            lastTouchX = x;
 		        lastTouchY = y;
-	            break;
+	            return true;
     		} case MotionEvent.ACTION_UP: {
 		        activePointerId = Globals.INVALID_POINTER_ID;
 		        break;
@@ -77,7 +83,7 @@ public class TranslationDetector {
 		        break;
 		    }
     	}
-    	return true;
+    	return false;
     }
     
     public static interface OnTranslationListener{

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/popupLayout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/annotation_background"
+    android:minHeight="125dp"
+    android:minWidth="200dp"
+    android:orientation="vertical" >
+
+    <RelativeLayout
+        android:id="@+id/actionsLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <ImageButton
+            android:id="@+id/actionClose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="5dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/action_close_selector" />
+
+        <ImageButton
+            android:id="@+id/actionDelete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_toLeftOf="@id/actionClose"
+            android:background="@android:color/transparent"
+            android:src="@drawable/action_delete_selector" />
+
+        <ImageButton
+            android:id="@+id/actionEdit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_toLeftOf="@id/actionDelete"
+            android:background="@android:color/transparent"
+            android:src="@drawable/action_edit_selector" />
+
+        <ImageButton
+            android:id="@+id/actionResize"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="5dp"
+            android:layout_marginTop="5dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/action_maximize_selector" />
+
+    </RelativeLayout>
+
+    <EditText
+        android:id="@+id/annotationTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginTop="5dp"
+        android:ellipsize="end"
+        android:ems="10"
+        android:hint="@string/annotation_title"
+        android:lines="1"
+        android:maxLines="1"
+        android:nextFocusDown="@+id/annotationDescription"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:textColor="@drawable/editext_selector" >
+
+        <requestFocus />
+    </EditText>
+
+    <EditText
+        android:id="@+id/annotationDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginTop="5dp"
+        android:ems="10"
+        android:hint="@string/annotation_description"
+        android:inputType="textMultiLine"
+        android:textColor="@drawable/editext_selector" />
+
+</LinearLayout>

@@ -8,6 +8,13 @@
     <color name="ActionBar">#5DC6C1</color>
     <color name="ActionBarTitle">#F6F6F6</color>
     
+    <!-- Popup Colors -->
+    <!-- <color name="PopupBackground">#B3F0F0F0</color> -->
+    <color name="PopupBackground">#B35DC6C1</color>
+    
+    <!-- EditText Colors -->
+    <color name="DisabledText">#F6F6F6</color>
+    
     <!-- ListView colors -->
     <color name="ObjectName">#000000</color>
     <color name="ObjectSize">#888888</color>

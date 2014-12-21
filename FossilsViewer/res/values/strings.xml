@@ -5,19 +5,26 @@
     <string name="loading_objects">Loading Objects</string>
     <string name="reading_object">Reading Object</string>
     <string name="add_annotation">Add New Annotation</string>
+    <string name="remove_annotation">Remove Annotation</string>
+    <string name="are_you_sure">Are you sure you want to delete this annotation?</string>
+    <string name="close_annotation">Close annotation</string>
+    <string name="discrad_changes">Are you sure you want to discard changes?</string>
     <string name="annotation_title">Annotation Title</string>
     <string name="annotation_description">Annotation Description</string>
     <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="discard">Discard</string>
     <string name="cancel">Cancel</string>
     
     <string name="action_center">Center Object</string>
     <string name="action_unlock_translation">Unlock Translation</string>
     <string name="action_lock_translation">Lock Translation</string>
-    <string name="action_open_light">Open Light</string>
-    <string name="action_close_light">Close Light</string>
+    <string name="action_ar">Show in real 3D space</string>
 
     <string name="toast_add_title">Please add a title</string>
     <string name="toast_add_description">Please add a description</string>
     <string name="toast_phone_not_supports_es2">Your mobile phone doesn\'t support OpenGL ES 2.0</string>
+    <string name="toast_error_in_saving">An error occurred while saving annotations</string>
+    <string name="toast_try_long_click_on_object">Try to perform long-click on the object</string>
     
 </resources>

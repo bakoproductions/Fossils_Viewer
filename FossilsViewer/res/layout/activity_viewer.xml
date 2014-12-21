@@ -6,30 +6,37 @@
     android:orientation="vertical" >
 
     <LinearLayout
-	     android:id="@+id/progressViewerLayout"
-	     android:layout_width="fill_parent"
-	     android:layout_height="fill_parent"
-	     android:gravity="center"
-	     android:orientation="vertical" >
-	
-	     <ProgressBar
-	         android:id="@+id/progressViewerBar"
-	         style="?android:attr/progressBarStyleLarge"
-	         android:layout_width="wrap_content"
-	         android:layout_height="wrap_content"
-	         android:layout_gravity="center" />
-	
-	     <TextView
-	         android:id="@+id/textView1"
-	         android:layout_width="wrap_content"
-	         android:layout_height="wrap_content"
-	         android:text="@string/reading_object" />
-     </LinearLayout>
-      
+        android:id="@+id/progressViewerLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:gravity="center"
+        android:orientation="vertical" >
+
+        <ProgressBar
+            android:id="@+id/progressViewerBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/reading_object" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/popupHolder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical" >
+    </LinearLayout>
+
     <com.bakoproductions.fossilsviewer.viewer.ViewerGLSurfaceView
         android:id="@+id/glSurfaceView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
-	</com.bakoproductions.fossilsviewer.viewer.ViewerGLSurfaceView>
-        
+    </com.bakoproductions.fossilsviewer.viewer.ViewerGLSurfaceView>
+
 </RelativeLayout>
