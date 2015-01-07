@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 
+import com.bakoproductions.fossilsviewer.objects.Ground;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.parsers.OBJParser;
 
@@ -14,6 +15,8 @@ import edu.dhbw.andar.exceptions.AndARException;
 
 public class ARActivity extends AndARActivity {
 	CustomObject object;
+	Ground ground;
+	
 	ARRenderer renderer;
 	ARToolkit artoolkit;
 	
@@ -37,13 +40,15 @@ public class ARActivity extends AndARActivity {
 			return;
 		
 		object = new CustomObject("test", "android.patt", 80.0, new double[]{0,0}, model);
-		renderer = new ARRenderer(this, object);
+		//ground = new Ground("test", "android.patt", 80.0, new double[]{0,0}, model.getSphere());
 		
+		renderer = new ARRenderer(this, object);
 		super.setNonARRenderer(renderer);
 		
 		try {
 			artoolkit = super.getArtoolkit();
 			artoolkit.registerARObject(object);
+			//artoolkit.registerARObject(ground);
 		} catch (AndARException e) {
 			e.printStackTrace();
 		}

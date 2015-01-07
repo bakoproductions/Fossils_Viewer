@@ -25,6 +25,7 @@ import android.renderscript.Matrix4f;
 import android.util.Log;
 
 import com.bakoproductions.fossilsviewer.R;
+import com.bakoproductions.fossilsviewer.annotations.Annotation;
 import com.bakoproductions.fossilsviewer.shaders.ShadersUtil;
 import com.bakoproductions.fossilsviewer.util.Globals;
 import com.bakoproductions.fossilsviewer.util.MathHelper;
@@ -220,7 +221,6 @@ public class Model implements Parcelable{
 			gl.glDisableClientState(GL10.GL_COLOR_ARRAY);
 			gl.glDisableClientState(GL10.GL_NORMAL_ARRAY);
 			gl.glDisableClientState(GL10.GL_TEXTURE_COORD_ARRAY);
-			
 		}
 	}
 	
@@ -262,55 +262,57 @@ public class Model implements Parcelable{
 		System.arraycopy(modelMatrix, 0, temp, 0, modelMatrix.length);
 		Matrix.multiplyMM(modelMatrix, 0, temp, 0, invA, 0);
 		
-		Matrix.rotateM(modelMatrix, 0, -90, 1, 0, 0);
+		Matrix.rotateM(modelMatrix, 0, 90.0f, 1, 0, 0);
 	}
 	
-	/*public void alignToNormal(float[] modelMatrix, float[] position, float[] normal) {
-		float l = (float) Math.sqrt((normal[0] * normal[0]) + (normal[1] * normal[1]));
-		float length = MathHelper.length(normal);
-		
-		float[] A = new float[16];
-		A[0] = normal[1] / l;
-		A[1] = - (normal[0] / l);
-		A[2] = 0;
-		A[3] = 0;
-		
-		A[4] = (normal[2] * normal[0]) / (l * length);
-		A[5] = (normal[2] * normal[1])/ (l * length);
-		A[6] = - (l / length);
-		A[7] = 0;
-		
-		A[8] = normal[0] / length;
-		A[9] = normal[1] / length;
-		A[10] = normal[2] / length;
-		A[11] = 0;
-		
-		A[12] = 0;
-		A[13] = 0;
-		A[14] = 0;
-		A[15] = 1;
-		
-		float[] invA = new float[16];
-		Matrix.invertM(invA, 0, A, 0);
-		
-		Matrix.translateM(modelMatrix, 0, position[0], position[1], position[2]);
-		
-		float[] temp = new float[16];
-		System.arraycopy(modelMatrix, 0, temp, 0, modelMatrix.length);
-		Matrix.multiplyMM(modelMatrix, 0, temp, 0, invA, 0);
-		
-		Matrix.rotateM(modelMatrix, 0, 90, 1, 0, 0);
-	}*/
-	
-	/*public void alignToNormal(float[] modelMatrix, float[] position, float[] normal) {
-		float[] lookAtMatrix = new float[16];
-		Matrix.setLookAtM(lookAtMatrix, 0, position[0], position[1], position[2], normal[0], normal[1], normal[2], 0.0f, 1.0f, 0.0f);
-		
-		float[] temp = new float[16];
-		System.arraycopy(modelMatrix, 0, temp, 0, modelMatrix.length);
-		
-		Matrix.multiplyMM(modelMatrix, 0, temp, 0, lookAtMatrix, 0);		
-	}*/
+	public void alignToNormalManual(float[] modelMatrix, float[] position, float[] normal) {
+		if(normal[0] == 0 && normal[1] == 0) {
+			// without this check, division with n0 and n1 would return NaN
+			// (0, 0, n2) means that the normal is perpendicular to the z axis
+			
+			Matrix.translateM(modelMatrix, 0, position[0], position[1], position[2]);
+			if(normal[2] > 0) {
+				// Rx(90)
+				Matrix.rotateM(modelMatrix, 0, 90, 1, 0, 0);
+			} else if(normal[2] < 0) {
+				// Rx(-90)
+				Matrix.rotateM(modelMatrix, 0, -90, 1, 0, 0);
+			}
+		} else {
+			float l = (float) Math.sqrt((normal[0] * normal[0]) + (normal[1] * normal[1]));
+			float length = MathHelper.length(normal);
+			
+			float[] A = new float[16];
+			A[0] = normal[1] / l;
+			A[1] = normal[0]/ length;
+			A[2] = - ((normal[0] * normal[2]) / (l * length));
+			A[3] = 0;
+			
+			A[4] = - (normal[0] / l);
+			A[5] = normal[1] / length;
+			A[6] = - ((normal[2] * normal[1]) / (l * length));
+			A[7] = 0;
+			
+			A[8] = 0;
+			A[9] = normal[2] / length;
+			A[10] = l / length;
+			A[11] = 0;
+			
+			A[12] = 0;
+			A[13] = 0;
+			A[14] = 0;
+			A[15] = 1;
+			
+			float[] invA = new float[16];
+			Matrix.invertM(invA, 0, A, 0);
+			
+			Matrix.translateM(modelMatrix, 0, position[0], position[1], position[2]);
+			
+			float[] temp = new float[16];
+			System.arraycopy(modelMatrix, 0, temp, 0, modelMatrix.length);
+			Matrix.multiplyMM(modelMatrix, 0, temp, 0, invA, 0);
+		}
+	}
 	
 	public void scale(float[] modelMatrix, float scale) {
 		Matrix.scaleM(modelMatrix, 0, scale, scale, scale);

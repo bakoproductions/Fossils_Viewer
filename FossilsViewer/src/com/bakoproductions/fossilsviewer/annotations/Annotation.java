@@ -110,6 +110,10 @@ public class Annotation implements Parcelable {
 		this.id = id;
 	}
 	
+	public BoundingSphere getSphere() {
+		return sphere;
+	}
+	
 	public void calculateSphere(float[] modelMatrix, float scaling, BoundingSphere pushPinSphere) {
 		float[] pCenter = pushPinSphere.getCenter();
 		float[] center = new float[4];
@@ -125,38 +129,95 @@ public class Annotation implements Parcelable {
 	}
 	
 	public float[] getIntersectionWithPin(float[] P1, float[] P2) {
-		float[] vpc = MathHelper.getLineVector(P1, sphere.getCenter());				// vpc = c - P1
-		Log.i("Bako", "VPC: " + vpc[0] + ", " + vpc[1] + ", " + vpc[2]);
-		float[] d = MathHelper.getLineVector(P1, P2);
-		float radious = sphere.getDiameter() / 2;
-		float[] c = sphere.getCenter();
-		float vpcLen = MathHelper.length(vpc);
+		float[] CE = sphere.getCenter();
+		float r = sphere.getDiameter() / 2.0f;
 		
-		if(MathHelper.dot(vpc, d) < 0) {											// P1 is further from c
-			if(vpcLen > radious)													// P1 is outside the sphere
-				return null;
-			else if(vpcLen == radious)												// P1 is on the edge of the sphere
-				return P1;
-			else {
-				float[] pc = MathHelper.findProjection(P1, P2, c);					// pc: projection of c on the line
-				float dist = (float) Math.sqrt((radious * radious) - (MathHelper.distance(pc, c) * MathHelper.distance(pc, c)));
-				float di1 = dist - MathHelper.distance(pc, P1);
-				return MathHelper.pointOnLine(P1, d, di1);
-			}
-		} else {																	// P1 is behind c
-			float[] pc = MathHelper.findProjection(P1, P2, c);						// pc: projection of c on the line
-			if(MathHelper.distance(c, pc) > radious)								// pc is outside the sphere
-				return null;
-			else {																	// pc is inside the sphere
-				float dist = (float) Math.sqrt((radious * radious) - (MathHelper.distance(pc, c) * MathHelper.distance(pc, c)));
-				float di1;
-				if(vpcLen > radious)
-					di1 = Math.abs(MathHelper.distance(pc, P1)) - dist;
-				else
-					di1 = Math.abs(MathHelper.distance(pc, P1)) + dist;
-				
-				return MathHelper.pointOnLine(P1, d, di1);
-			}
+		float xB_A = P2[0] - P1[0]; 								// Xb - Xa
+		float yB_A = P2[1] - P1[1];									// Yb - Ya
+		float zB_A = P2[2] - P1[2];									// Zb - Za
+		
+		//Log.i("Bako", "Xb - Xa = (" + P2[0] + " - " + P1[0] + ") = " + xB_A);
+		//Log.i("Bako", "Yb - Ya = (" + P2[1] + " - " + P1[1] + ") = " + yB_A);
+		//Log.i("Bako", "Zb - Za = (" + P2[2] + " - " + P1[2] + ") = " + zB_A);
+		
+		float xA_C = P1[0] - CE[0];									// Xa - Xc
+		float yA_C = P1[1] - CE[1];									// Ya - Yc	
+		float zA_C = P1[2] - CE[2];									// Za - Zc
+		
+		//Log.i("Bako", "Xa - Xc = (" + P1[0] + " - " + CE[0] + ") = " + xA_C);
+		//Log.i("Bako", "Ya - Yc = (" + P1[1] + " - " + CE[1] + ") = " + yA_C);
+		//Log.i("Bako", "Za - Zc = (" + P1[2] + " - " + CE[2] + ") = " + zA_C);
+		
+		float a = (xB_A * xB_A) + (yB_A * yB_A) + (zB_A * zB_A);
+		float b = 2 * ((xB_A * xA_C) + (yB_A * yA_C) + (zB_A * zA_C));
+		float c = (xA_C * xA_C) + (yA_C * yA_C) + (zA_C * zA_C) - (r * r);
+		float delta = (b*b) - (4*a*c);
+		
+		float xB_A2 = xB_A * xB_A;
+		float yB_A2 = yB_A * yB_A;
+		float zB_A2 = zB_A * zB_A;
+		//Log.i("Bako", "(Xb - Xa)^2 = " + xB_A2);
+		//Log.i("Bako", "(Yb - Ya)^2 = " + yB_A2);
+		//Log.i("Bako", "(Zb - Za)^2 = " + zB_A2);
+		
+		float xB_A_xA_C = xB_A * xA_C;
+		float yB_A_yA_C = yB_A * yA_C;
+		float zB_A_zA_C = zB_A * zA_C;
+		//Log.i("Bako", "(Xb - Xa)*(Xa - Xc) = " + xB_A_xA_C);
+		//Log.i("Bako", "(Yb - Ya)*(Ya - Yc) = " + yB_A_yA_C);
+		//Log.i("Bako", "(Zb - Za)*(Za - Zc) = " + zB_A_zA_C);
+		
+		float xA_C2 = xA_C * xA_C;
+		float yA_C2 = yA_C * yA_C;
+		float zA_C2 = zA_C * zA_C;
+		float r2 = r * r;
+		//Log.i("Bako", "(Xa - Xc)^2 = " + xA_C2);
+		//Log.i("Bako", "(Ya - Yc)^2 = " + yA_C2);
+		//Log.i("Bako", "(Za - Zc)^2 = " + zA_C2);
+		//Log.i("Bako", "r^2 = " + r2);
+		
+		
+		//Log.i("Bako", "Center: " + CE[0] + ", " + CE[1] + ", " + CE[2]);
+        //Log.i("Bako", "Radious: " + r);
+    	//Log.i("Bako", "P1: " + P1[0] + ", " + P1[1] + ", " + P1[2]);
+    	//Log.i("Bako", "P2: " + P2[0] + ", " + P2[1] + ", " + P2[2]);
+    	
+    	//Log.i("Bako", "a: " + a );
+    	//Log.i("Bako", "b: " + b );
+    	//Log.i("Bako", "c: " + c );
+    	//Log.i("Bako", "Ä: " + delta );
+		
+		if(delta < 0)
+			return null;
+		else if(delta == 0) {
+			float d = - (b / (2*a));
+			
+			float[] ret = new float[3];
+			ret[0] = P1[0] + (d * (P2[0] - P1[0]));
+			ret[1] = P1[1] + (d * (P2[1] - P1[1]));
+			ret[2] = P1[2] + (d * (P2[2] - P1[2]));
+			Log.i("Bako", "============= HIT ==============");
+			return ret;
+		} else {
+			float d1 = -b + ((float)Math.sqrt(delta)/(2*a));
+			float d2 = -b - ((float)Math.sqrt(delta)/(2*a));
+			
+			float[] ret1 = new float[3];
+			float[] ret2 = new float[3];
+			
+			ret1[0] = P1[0] + (d1 * (P2[0] - P1[0]));
+			ret1[1] = P1[1] + (d1 * (P2[1] - P1[1]));
+			ret1[2] = P1[2] + (d1 * (P2[2] - P1[2]));
+			
+			ret2[0] = P1[0] + (d2 * (P2[0] - P1[0]));
+			ret2[1] = P1[1] + (d2 * (P2[1] - P1[1]));
+			ret2[2] = P1[2] + (d2 * (P2[2] - P1[2]));
+			
+			float min = MathHelper.distance(P1, ret1);
+			if(MathHelper.distance(P1, ret2) < min)
+				return ret2;
+			else
+				return ret1;		
 		}
 	}
 	

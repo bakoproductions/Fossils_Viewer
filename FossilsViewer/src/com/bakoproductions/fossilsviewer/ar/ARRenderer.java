@@ -5,6 +5,7 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
@@ -47,7 +48,7 @@ public class ARRenderer implements OpenGLRenderer {
 		float[] center = sphere.getCenter();
 		float diameter = sphere.getDiameter();
 		
-		lightposition = new float[] {center[0], center[1], center[2] + diameter, 1.0f};
+		lightposition = new float[] {center[0], center[1] - diameter, center[2], 1.0f};
 		
 		lightPositionBuffer =  GraphicsUtil.makeFloatBuffer(lightposition);
 		specularLightBuffer = GraphicsUtil.makeFloatBuffer(specularlight);
@@ -80,8 +81,10 @@ public class ARRenderer implements OpenGLRenderer {
 	@Override
 	public void initGL(GL10 gl) {
 		gl.glShadeModel(GL10.GL_SMOOTH);
+		gl.glEnable(GL10.GL_CULL_FACE);
 		gl.glEnable(GL10.GL_DEPTH_TEST);
 		gl.glEnable(GL10.GL_NORMALIZE);
+		gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);  
 	}
 	
 	public boolean onTouchEvent(MotionEvent event) {
@@ -89,7 +92,7 @@ public class ARRenderer implements OpenGLRenderer {
 		scaleDetector.onTouchEvent(event);
 		return true;
 	}
-
+	
 	private class RotationListener implements RotationDetector.OnRotationListener{
 		@Override
 		public void onRotation(RotationDetector rotationDetector, float x, float y) {

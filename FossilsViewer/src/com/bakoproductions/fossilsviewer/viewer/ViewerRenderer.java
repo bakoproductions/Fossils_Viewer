@@ -1,5 +1,7 @@
 package com.bakoproductions.fossilsviewer.viewer;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
@@ -16,6 +18,9 @@ import android.opengl.Matrix;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
+import android.view.Display;
+import android.view.WindowManager;
+import android.widget.SlidingDrawer;
 
 import com.bakoproductions.fossilsviewer.annotations.Annotation;
 import com.bakoproductions.fossilsviewer.annotations.Annotations;
@@ -43,6 +48,14 @@ public class ViewerRenderer implements Renderer, DialogResult {
     
     private boolean lockedTranslation;
     
+    /* ====== Annotation popup ====== */
+    private int displayedAnnotation = -1;
+    
+    private static final int CLOSED_STAGE = 0;
+    private static final int OPENED_STAGE = 1;
+    private int displayedStage = CLOSED_STAGE;
+    /* ============================== */
+    
     /* ====== Touch events parameters ====== */
     private float scaleFactor = 1.0f;
 	   
@@ -51,7 +64,7 @@ public class ViewerRenderer implements Renderer, DialogResult {
  
     private float rotX = 0.0f;
     private float rotY = 0.0f;
-    /* ===================================== */
+    /* =============================-======== */
 	
 	/* = Perspective projection parameters = */
 	private float zNear = 1.0f;
@@ -70,15 +83,14 @@ public class ViewerRenderer implements Renderer, DialogResult {
 	
 	private float pushPinSizeFactor = 0.05f; 
 	
-	/*
-	 * Matrices of the Mesh
-	 */
+	/* ======== Matrices of the Mesh =========== */
 	private float[] modelMatrix = new float[16];
 	private float[] viewMatrix = new float[16];
 	private float[] projectionMatrix = new float[16];
 	private float[] MVMatrix = new float[16];
 	private float[] MVPMatrix = new float[16];
 	private int[] viewport;
+	/* ======================================== */
 	
 	public ViewerRenderer(Context context, String filePath, Model model, Model pushPin) {
 		this.context = context;
@@ -88,7 +100,6 @@ public class ViewerRenderer implements Renderer, DialogResult {
 		lockedTranslation = false;
 		userRequestedAnnotation = false;
 		
-		
 		String[] file = filePath.split("/");
 		this.filePath = file[file.length - 1];
 		annotations = new Annotations(this.filePath);
@@ -96,7 +107,7 @@ public class ViewerRenderer implements Renderer, DialogResult {
 
 	@Override
 	public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-		GLES20.glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
+		GLES20.glClearColor(.5f, .5f, .5f, 0.5f);
 		
 		GLES20.glDisable(GLES20.GL_CULL_FACE);
 		GLES20.glCullFace(GLES20.GL_BACK);
@@ -131,7 +142,8 @@ public class ViewerRenderer implements Renderer, DialogResult {
 	@Override
 	public void onDrawFrame(GL10 gl) {		
 		GLES20.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-		
+				
+		// =================== 3D scene ============================ //
 		float[] center = model.getSphere().getCenter();
         float diameter = model.getSphere().getDiameter();
         
@@ -143,19 +155,19 @@ public class ViewerRenderer implements Renderer, DialogResult {
         	Annotation annotation = annotationList.get(i);
         	
         	float[] intersection = annotation.getIntersection();
-        	float[] pos = new float[3];
-        	pos[0] = intersection[0] - center[0];
-        	pos[1] = intersection[1] - center[1];
-        	pos[2] = intersection[2] - center[2];
+        	float[] positioningMatrix = new float[16];
+        	Matrix.setIdentityM(positioningMatrix, 0);
+        	pushPin.position(positioningMatrix, new float[]{-center[0], -center[1], -center[2]}, new float[]{rotX, rotY}, scaleFactor);
+        	
+        	float[] alignementMatrix = new float[16];
+        	Matrix.setIdentityM(alignementMatrix, 0);
+        	pushPin.alignToNormalManual(alignementMatrix, intersection, annotation.getNormal());
+        	float scaling = getPushPinSize(pushPin.getSphere().getDiameter(), model.getSphere().getDiameter());
+        	pushPin.scale(alignementMatrix, scaling);
+        	annotation.calculateSphere(alignementMatrix, scaling, pushPin.getSphere());
         	
         	Matrix.setIdentityM(modelMatrix, 0);
-        	pushPin.scale(modelMatrix, scaleFactor);
-        	pushPin.rotate(modelMatrix, new float[] {rotX, rotY});
-        	pushPin.alignToNormal(modelMatrix, pos, annotation.getNormal());
-        	float scaling = getPushPinSize(pushPin.getSphere().getDiameter(), model.getSphere().getDiameter());
-        	pushPin.scale(modelMatrix, scaling);
-        	
-        	annotation.calculateSphere(modelMatrix, scaling, pushPin.getSphere());          
+        	Matrix.multiplyMM(modelMatrix, 0, positioningMatrix, 0, alignementMatrix, 0);
             pushPin.draw(modelMatrix, viewMatrix, projectionMatrix, MVMatrix, MVPMatrix);
             light.draw(pushPin.getLightPosUniform(), viewMatrix, projectionMatrix);
         }
@@ -170,10 +182,6 @@ public class ViewerRenderer implements Renderer, DialogResult {
         	float[] P1 = new float[3];
         	float[] P2 = new float[3];
         	createRay(P1, P2); 
-        	
-        	Log.i(TAG, "Annotation Dialog: ==================================");
-        	Log.i(TAG, "P1: " + P1[0] + ", " + P1[1] + ", " + P1[2]);
-        	Log.i(TAG, "P2: " + P2[0] + ", " + P2[1] + ", " + P2[2]);
         	
         	intersection = findIntersection(P1, P2); 
         	
@@ -208,49 +216,75 @@ public class ViewerRenderer implements Renderer, DialogResult {
         	float[] P1 = new float[3];
         	float[] P2 = new float[3];
         	createRay(P1, P2);
-        	line = new Line(context, P1, P2);
-        	Log.i(TAG, "Pop Up: ==================================");
-        	Log.i(TAG, "P1: " + P1[0] + ", " + P1[1] + ", " + P1[2]);
-        	Log.i(TAG, "P2: " + P2[0] + ", " + P2[1] + ", " + P2[2]);
-        	
-        	int i=0;
-        	for(Annotation annotation: annotationList) {
-        		Log.i("Bako", "Annotation: " + i + " ================");
+        	/*line = new Line(context, P1, P2);*/        	
+            
+            int hitted = 0;
+            float min = 0;
+        	for(int i=0;i<annotationList.size();i++) {
+	        	Annotation annotation = annotationList.get(i);
 	        	float[] inter = annotation.getIntersectionWithPin(P1, P2);
-	        	
-	        	if(inter != null) {
-	        		Log.i(TAG, "Annotation X: " + annotation.getX() + ", Y: " + annotation.getY() + ", Z: " + annotation.getZ());
+	   
+	        	if(inter != null) {        		
+	        		if(hitted == 0) {
+	        			min = MathHelper.distance(P1, annotation.getIntersection());
+	        			displayedAnnotation = i;
+	        		} else {
+	        			float dist = MathHelper.distance(P1, annotation.getIntersection());
+	        			if(dist < min) {
+	        				min = dist;
+	        				displayedAnnotation = i;		
+	        			}
+	        		}
+	        		hitted++;
 	        	}
-	        	
-	        	i++;
-        	}
+        	}        	
         	userRequestedPopup = false;
         }
         
-        if(line != null) {
+        /*if(line != null) {
         	line.position(modelMatrix, new float[] {-center[0],-center[1],-center[2]}, new float[] {rotX, rotY}, scaleFactor);
         	line.draw(modelMatrix, viewMatrix, projectionMatrix, MVMatrix, MVPMatrix);
-        }
-        /*if(userRequestedPopup) {
-        	// TODO: if click picks an annotation do the code below
-        	Message message = new Message();
-        	message.what = DialogHandler.OPEN_ANNOTATION;
-        	
-        	
-        	// TODO: find the id of the annotation
-        	// TODO: and get it form annotations
-        	Annotation ann = new Annotation();
-        	ann.setId(500);
-        	ann.setTitle("Test Annotation");
-        	ann.setText("This is the test that describes the first annotation");
-        	
-        	Bundle data = new Bundle();
-    		data.putParcelable("annotation", ann);
-    		message.setData(data);
-        	
-        	dialogHanlder.sendMessage(message);
-        	userRequestedPopup = false;
         }*/
+        
+        if(displayedAnnotation != -1) {
+	        Matrix.setIdentityM(modelMatrix, 0);
+	        Matrix.scaleM(modelMatrix, 0, scaleFactor, scaleFactor, scaleFactor);
+	        Matrix.rotateM(modelMatrix, 0, rotX, 1, 0, 0);
+	        Matrix.rotateM(modelMatrix, 0, rotY, 0, 1, 0);
+	        Matrix.translateM(modelMatrix, 0, -center[0], -center[1], -center[2]);
+        }
+        // First time: open the popup dialog
+        if(displayedAnnotation != -1 && displayedStage == CLOSED_STAGE) {
+        	Annotation annotation = annotationList.get(displayedAnnotation);
+        	/*float[] in = annotation.getIntersection();
+        	float[] win = new float[3];
+        	GLU.gluProject(in[0], in[1], in[2], modelMatrix, 0, projectionMatrix, 0, viewport, 0, win, 0); 	
+        	
+        	float u = win[0] / win[2];
+        	float v = win[1] / win[2];
+        	Log.i(TAG, "Create at: (" + u + ", " + v + ")");*/
+        	
+    		Message message = new Message();
+    		message.what = DialogHandler.OPEN_ANNOTATION;
+    	
+    		Bundle bundle = new Bundle();
+    		bundle.putParcelable("annotation", annotationList.get(displayedAnnotation));
+    		message.setData(bundle);
+    		dialogHanlder.sendMessage(message);
+    		
+    		displayedStage = OPENED_STAGE;
+    	}
+        
+        // If the popup is visible, move it
+        if(displayedAnnotation != -1 && displayedStage == OPENED_STAGE) {
+        	Annotation annotation = annotationList.get(displayedAnnotation);
+        	/*float[] in = annotation.getIntersection();
+        	float[] win = new float[3];
+        	GLU.gluProject(in[0], in[1], in[2], modelMatrix, 0, projectionMatrix, 0, viewport, 0, win, 0); 	
+        	float u = win[0] / win[2];
+        	float v = win[1] / win[2];
+        	Log.i(TAG, "Move at: (" + u + ", " + v + ")");*/
+        }
 	}
 	
 	public void setHandler(DialogHandler dialogHandler) {
@@ -340,6 +374,14 @@ public class ViewerRenderer implements Renderer, DialogResult {
 	
 	public void setClickY(float clickY) {
 		this.clickY = clickY;
+	}
+	
+	public int getDisplayedAnnotation() {
+		return displayedAnnotation;
+	}
+	
+	public void setDisplayedAnnotation(int displayedAnnotation) {
+		this.displayedAnnotation = displayedAnnotation;
 	}
 	
 	private float getPushPinSize(float pushDiam, float meshDiam) {
@@ -492,6 +534,12 @@ public class ViewerRenderer implements Renderer, DialogResult {
 	@Override
 	public void editAnnotation(int id, String title, String text) {
 		annotations.edit(context, id, title, text);
+	}
+	
+	@Override
+	public void closeAnnotation() {
+		displayedAnnotation = -1;
+		displayedStage = CLOSED_STAGE;
 	}
 	
 	public static void checkGlError(String op) {

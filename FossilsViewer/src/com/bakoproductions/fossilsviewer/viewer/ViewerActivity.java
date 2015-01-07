@@ -75,6 +75,7 @@ public class ViewerActivity extends SherlockActivity {
 				renderer.setRotY(savedInstanceState.getFloat("rotY"));
 				
 				renderer.setScaleFactor(savedInstanceState.getFloat("scaleFactor"));
+				renderer.setDisplayedAnnotation(savedInstanceState.getInt("displayedAnnotation"));
 				supportInvalidateOptionsMenu();
 				return;
 			}
@@ -116,7 +117,7 @@ public class ViewerActivity extends SherlockActivity {
 		
 		if(file != null)
 			outState.putString("file", file);
-		
+	
 		if(pushPin != null)
 			outState.putParcelable("pushPin", pushPin);
 		
@@ -130,6 +131,7 @@ public class ViewerActivity extends SherlockActivity {
 			outState.putFloat("rotY", renderer.getRotY());
 			
 			outState.putFloat("scaleFactor", renderer.getScaleFactor());
+			outState.putInt("displayedAnnotation", renderer.getDisplayedAnnotation());
 		}
 	}
 	
@@ -182,11 +184,9 @@ public class ViewerActivity extends SherlockActivity {
 		case R.id.action_ar:
 			Intent intent = new Intent(this, ARActivity.class);
 			intent.putExtra("model", renderer.getModel());
-			intent.putExtra("pushPin", renderer.getPushPin());
 			intent.putExtra("file", renderer.getFilePath());
 			
 			startActivity(intent);
-			
 			supportInvalidateOptionsMenu();
 			break;
 		default:

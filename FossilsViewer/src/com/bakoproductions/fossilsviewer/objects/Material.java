@@ -105,14 +105,12 @@ public class Material implements Parcelable{
 			return null;
 		}
 		
-		Log.d("Bako", textureFile);
 		AssetManager assets = context.getAssets();
 		
 		try {
 			InputStream is = assets.open(textureFile);
 			return BitmapFactory.decodeStream(is);
 		} catch (IOException e) {
-			Log.d("Bako", "einai null");
 			return null;
 		}
 	}

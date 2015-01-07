@@ -2,6 +2,9 @@ package com.bakoproductions.fossilsviewer.ar;
 
 import javax.microedition.khronos.opengles.GL10;
 
+import android.util.Log;
+
+import com.bakoproductions.fossilsviewer.objects.Ground;
 import com.bakoproductions.fossilsviewer.objects.Model;
 
 import edu.dhbw.andar.ARObject;
@@ -35,12 +38,19 @@ public class CustomObject extends ARObject {
 	public final void draw(GL10 gl) {
 		super.draw(gl);
 		
+		// +X --> Left to Right
+		// +Y --> Back to Forward
+		// +Z --> Bottom to Top
 		float[] center = model.getSphere().getCenter();
+		float radious = model.getSphere().getDiameter() / 2;
+		
+		gl.glTranslatef(0, 0, radious);
 		
 		gl.glScalef(scaleFactor, scaleFactor, scaleFactor);
 		gl.glRotatef(rotX, 1, 0, 0);
-		gl.glRotatef(rotY, 0, 1, 0);
+		gl.glRotatef(rotY, 0, 0, 1);
 		gl.glTranslatef(-center[0], -center[1], -center[2]);
+		
 		model.draw(gl);
 	}
 	

@@ -1,6 +1,7 @@
 package com.bakoproductions.fossilsviewer.viewer;
 
 import android.content.Context;
+import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.os.Message;
@@ -30,8 +31,8 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 	public ViewerGLSurfaceView(Context context) {
 		super(context);
 		this.context = context;
-		
-	    clickDetector = new ClickDetector(new ClickListener(), new LongPressListener());
+	    
+		clickDetector = new ClickDetector(new ClickListener(), new LongPressListener());
 		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 		translationDetector = new TranslationDetector(new TranslationListener());
 		rotationDetector = new RotationDetector(new RotationListener());

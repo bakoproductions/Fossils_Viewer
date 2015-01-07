@@ -34,10 +34,11 @@ public class Popup {
 	
 	private boolean editingMode = false;
 	private boolean maximizeMode = false;
-	private boolean opened = false;
 	
 	public Popup(Context context, Message message, DialogResult listener) {
 		this.context = context;
+		this.listener = listener;
+		
 		Activity parent = (Activity) context;
 		
 		LinearLayout parentLayout = (LinearLayout) parent.findViewById(R.id.popupHolder);
@@ -70,8 +71,6 @@ public class Popup {
 	               false);
 		
 		window.showAtLocation(parentLayout, Gravity.CENTER, 0, 0);
-		
-		opened = true;
 	}
 	
 	public void update(int x, int y) {
@@ -80,10 +79,6 @@ public class Popup {
 	
 	public void update(int x, int y, int width, int height) {
 		window.update(x, y, width, height);
-	}
-	
-	public boolean isOpened() {
-		return opened;
 	}
 	
 	private void disableEditTexts() {
@@ -117,7 +112,7 @@ public class Popup {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						window.dismiss();
-						opened = false;
+						listener.closeAnnotation();
 					}
 				});
 				builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -128,7 +123,7 @@ public class Popup {
 				builder.create().show();
 			} else {
 				window.dismiss();
-				opened = false;
+				listener.closeAnnotation();
 			}
 		}
 	}
@@ -145,7 +140,7 @@ public class Popup {
 				public void onClick(DialogInterface dialog, int which) {
 					listener.deleteAnnotation(annotation.getId());
 					window.dismiss();
-					opened = false;
+					listener.closeAnnotation();
 				}
 			});
 			builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {

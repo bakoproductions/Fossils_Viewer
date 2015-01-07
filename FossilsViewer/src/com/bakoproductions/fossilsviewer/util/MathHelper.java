@@ -1,5 +1,7 @@
 package com.bakoproductions.fossilsviewer.util;
 
+import android.util.Log;
+
 
 public class MathHelper {
 	public static final int X = 0;
@@ -32,6 +34,14 @@ public class MathHelper {
     
     public static float distance(float[] u, float[] v) {
     	return (float) Math.sqrt(((u[X] - v[X]) * (u[X] - v[X])) + ((u[Y] - v[Y]) * (u[Y] - v[Y])) + ((u[Z] - v[Z]) * (u[Z] - v[Z])));
+    }
+    
+    public static void printMatrix(float[] m) {
+    	Log.i("Bako", "========================================");
+    	Log.i("Bako", "| \t " + m[0] + " \t " + m[4] + " \t " + m[8] + " \t " + m[12] + " \t |");
+    	Log.i("Bako", "| \t " + m[1] + " \t " + m[5] + " \t " + m[9] + " \t " + m[13] + " \t |");
+    	Log.i("Bako", "| \t " + m[2] + " \t " + m[6] + " \t " + m[10] + " \t " + m[14] + " \t |");
+    	Log.i("Bako", "| \t " + m[3] + " \t " + m[7] + " \t " + m[11] + " \t " + m[15] + " \t |");
     }
    
    public static float[] pointOnLine(float[] p, float[] vector, float len) {

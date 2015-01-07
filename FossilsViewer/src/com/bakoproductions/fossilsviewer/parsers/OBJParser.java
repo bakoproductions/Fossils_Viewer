@@ -208,9 +208,6 @@ public class OBJParser implements ModelParser {
 		float[] center = getCenterPoint(minX, maxX, minY, maxY, minZ, maxZ);
 		float diameter = computeDiameter(center, vertices);
 		
-		Log.i("Bako", "Centroid: " + center[0] + ", " + center[1] + ", " + center[2]);
-		Log.i("Bako", "Diameter: " + diameter);
-		
 		BoundingSphere sphere = new BoundingSphere(center, diameter);
 		model.applyBoundingSphere(sphere);
 		
