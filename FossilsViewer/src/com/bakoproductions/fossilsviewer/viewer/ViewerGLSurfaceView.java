@@ -3,6 +3,7 @@ package com.bakoproductions.fossilsviewer.viewer;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
@@ -187,7 +188,8 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 		public static final int REMOVE_ANNOTATION = 1;
 		public static final int OPEN_ANNOTATION = 2;
 		public static final int MOVE_ANNOTATION = 3;
-		public static final int NO_HIT = 4;
+		public static final int CLOSE_ANNOTATION_FROM_RENDERER = 4;
+		public static final int NO_HIT = 5;
 		
 		private Popup popup;
 		
@@ -199,10 +201,15 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 				new DeleteAnnotationDialog(context, msg, renderer);
 			} else if (msg.what == OPEN_ANNOTATION) {
 				popup = new Popup(context, msg, renderer);	
-			} else if (msg.what == MOVE_ANNOTATION) { 
-				//if(popup != null && popup.isOpened()) {
-				//	popup.update(renderer., y)
-				//}
+			} else if (msg.what == MOVE_ANNOTATION) {
+				Bundle data = msg.getData();
+				String title = data.getString("title");
+				String description = data.getString("description");
+				
+				int[] location = msg.getData().getIntArray("location");
+				popup.update(title, description, location[0], location[1]);
+			} else if(msg.what == CLOSE_ANNOTATION_FROM_RENDERER) {
+				popup.closePopup();
 			} else if (msg.what == NO_HIT) {
 				Toast.makeText(context, R.string.toast_try_long_click_on_object, Toast.LENGTH_SHORT).show();
 			}

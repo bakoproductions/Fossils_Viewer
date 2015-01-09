@@ -40,7 +40,6 @@ public class ARActivity extends AndARActivity {
 			return;
 		
 		object = new CustomObject("test", "android.patt", 80.0, new double[]{0,0}, model);
-		//ground = new Ground("test", "android.patt", 80.0, new double[]{0,0}, model.getSphere());
 		
 		renderer = new ARRenderer(this, object);
 		super.setNonARRenderer(renderer);
@@ -48,7 +47,6 @@ public class ARActivity extends AndARActivity {
 		try {
 			artoolkit = super.getArtoolkit();
 			artoolkit.registerARObject(object);
-			//artoolkit.registerARObject(ground);
 		} catch (AndARException e) {
 			e.printStackTrace();
 		}

@@ -215,8 +215,7 @@ public class ViewerRenderer implements Renderer, DialogResult {
         if(userRequestedPopup) {
         	float[] P1 = new float[3];
         	float[] P2 = new float[3];
-        	createRay(P1, P2);
-        	/*line = new Line(context, P1, P2);*/        	
+        	createRay(P1, P2);        	
             
             int hitted = 0;
             float min = 0;
@@ -224,7 +223,7 @@ public class ViewerRenderer implements Renderer, DialogResult {
 	        	Annotation annotation = annotationList.get(i);
 	        	float[] inter = annotation.getIntersectionWithPin(P1, P2);
 	   
-	        	if(inter != null) {        		
+	        	if(inter != null) {
 	        		if(hitted == 0) {
 	        			min = MathHelper.distance(P1, annotation.getIntersection());
 	        			displayedAnnotation = i;
@@ -241,50 +240,56 @@ public class ViewerRenderer implements Renderer, DialogResult {
         	userRequestedPopup = false;
         }
         
-        /*if(line != null) {
-        	line.position(modelMatrix, new float[] {-center[0],-center[1],-center[2]}, new float[] {rotX, rotY}, scaleFactor);
-        	line.draw(modelMatrix, viewMatrix, projectionMatrix, MVMatrix, MVPMatrix);
-        }*/
-        
         if(displayedAnnotation != -1) {
-	        Matrix.setIdentityM(modelMatrix, 0);
-	        Matrix.scaleM(modelMatrix, 0, scaleFactor, scaleFactor, scaleFactor);
-	        Matrix.rotateM(modelMatrix, 0, rotX, 1, 0, 0);
-	        Matrix.rotateM(modelMatrix, 0, rotY, 0, 1, 0);
-	        Matrix.translateM(modelMatrix, 0, -center[0], -center[1], -center[2]);
-        }
-        // First time: open the popup dialog
-        if(displayedAnnotation != -1 && displayedStage == CLOSED_STAGE) {
-        	Annotation annotation = annotationList.get(displayedAnnotation);
-        	/*float[] in = annotation.getIntersection();
-        	float[] win = new float[3];
-        	GLU.gluProject(in[0], in[1], in[2], modelMatrix, 0, projectionMatrix, 0, viewport, 0, win, 0); 	
+        	if(displayedStage == CLOSED_STAGE) {
+        		Annotation annotation = annotationList.get(displayedAnnotation);
+            	int[] point = get2dPoint(annotation.getIntersection(), viewport[2], viewport[3]);
+            	
+        		Message message = new Message();
+        		message.what = DialogHandler.OPEN_ANNOTATION;
         	
-        	float u = win[0] / win[2];
-        	float v = win[1] / win[2];
-        	Log.i(TAG, "Create at: (" + u + ", " + v + ")");*/
-        	
-    		Message message = new Message();
-    		message.what = DialogHandler.OPEN_ANNOTATION;
-    	
-    		Bundle bundle = new Bundle();
-    		bundle.putParcelable("annotation", annotationList.get(displayedAnnotation));
-    		message.setData(bundle);
-    		dialogHanlder.sendMessage(message);
-    		
-    		displayedStage = OPENED_STAGE;
-    	}
-        
-        // If the popup is visible, move it
-        if(displayedAnnotation != -1 && displayedStage == OPENED_STAGE) {
-        	Annotation annotation = annotationList.get(displayedAnnotation);
-        	/*float[] in = annotation.getIntersection();
-        	float[] win = new float[3];
-        	GLU.gluProject(in[0], in[1], in[2], modelMatrix, 0, projectionMatrix, 0, viewport, 0, win, 0); 	
-        	float u = win[0] / win[2];
-        	float v = win[1] / win[2];
-        	Log.i(TAG, "Move at: (" + u + ", " + v + ")");*/
+        		Bundle bundle = new Bundle();
+        		bundle.putParcelable("annotation", annotation);
+        		bundle.putIntArray("location", point);
+        		message.setData(bundle);
+        		dialogHanlder.sendMessage(message);
+        		
+        		displayedStage = OPENED_STAGE;
+        	} else if(displayedStage == OPENED_STAGE){
+        		Annotation annotation = null;
+        		try {
+        			annotation = annotationList.get(displayedAnnotation);
+        		} catch (IndexOutOfBoundsException e) {
+        			displayedAnnotation = -1;
+        			return;
+        		}
+        		
+            	int[] point = get2dPoint(annotation.getIntersection(), viewport[2], viewport[3]);
+            	
+            	Message message = new Message();
+        		message.what = DialogHandler.MOVE_ANNOTATION;
+        		
+        		Bundle bundle = new Bundle();
+        		bundle.putString("title", annotation.getTitle());
+        		bundle.putString("description", annotation.getText());
+        		bundle.putIntArray("location", point);
+        		message.setData(bundle);
+        		dialogHanlder.sendMessage(message);
+        	}
         }
+	}
+	
+	public boolean onBackPressed() {
+		if(displayedStage == OPENED_STAGE) {
+			if(dialogHanlder != null) {
+				Message message = new Message();
+        		message.what = DialogHandler.CLOSE_ANNOTATION_FROM_RENDERER;
+        		dialogHanlder.sendMessage(message);
+				return true;
+			} else
+				return false;			
+		} else
+			return false;
 	}
 	
 	public void setHandler(DialogHandler dialogHandler) {
@@ -516,6 +521,25 @@ public class ViewerRenderer implements Renderer, DialogResult {
 		hit[5] = normal[2];
 		
 		return true;
+	}
+	
+	/*
+	 * 3D to 2D pixel coordinates
+	 */
+	private int[] get2dPoint(float[] pos, int width, int height) {
+		float[] vpMatrix = new float[16];
+		Matrix.multiplyMM(vpMatrix, 0, projectionMatrix, 0, MVMatrix, 0);
+
+		float[] projectedPoint = new float[4];
+		Matrix.multiplyMV(projectedPoint, 0, vpMatrix, 0, new float[] {pos[0], pos[1], pos[2], 1}, 0);
+		
+		float x = projectedPoint[0] / projectedPoint[3];
+		float y = projectedPoint[1] / projectedPoint[3];
+		
+		int[] ret = new int[2];
+		ret[0] = (int) (Math.round(((x + 1) / 2.0) * width));
+		ret[1] = (int) (Math.round(((1 - y) / 2.0) * height));
+		return ret;
 	}
 	
 	/*

@@ -136,56 +136,14 @@ public class Annotation implements Parcelable {
 		float yB_A = P2[1] - P1[1];									// Yb - Ya
 		float zB_A = P2[2] - P1[2];									// Zb - Za
 		
-		//Log.i("Bako", "Xb - Xa = (" + P2[0] + " - " + P1[0] + ") = " + xB_A);
-		//Log.i("Bako", "Yb - Ya = (" + P2[1] + " - " + P1[1] + ") = " + yB_A);
-		//Log.i("Bako", "Zb - Za = (" + P2[2] + " - " + P1[2] + ") = " + zB_A);
-		
 		float xA_C = P1[0] - CE[0];									// Xa - Xc
 		float yA_C = P1[1] - CE[1];									// Ya - Yc	
 		float zA_C = P1[2] - CE[2];									// Za - Zc
-		
-		//Log.i("Bako", "Xa - Xc = (" + P1[0] + " - " + CE[0] + ") = " + xA_C);
-		//Log.i("Bako", "Ya - Yc = (" + P1[1] + " - " + CE[1] + ") = " + yA_C);
-		//Log.i("Bako", "Za - Zc = (" + P1[2] + " - " + CE[2] + ") = " + zA_C);
-		
+	
 		float a = (xB_A * xB_A) + (yB_A * yB_A) + (zB_A * zB_A);
 		float b = 2 * ((xB_A * xA_C) + (yB_A * yA_C) + (zB_A * zA_C));
 		float c = (xA_C * xA_C) + (yA_C * yA_C) + (zA_C * zA_C) - (r * r);
 		float delta = (b*b) - (4*a*c);
-		
-		float xB_A2 = xB_A * xB_A;
-		float yB_A2 = yB_A * yB_A;
-		float zB_A2 = zB_A * zB_A;
-		//Log.i("Bako", "(Xb - Xa)^2 = " + xB_A2);
-		//Log.i("Bako", "(Yb - Ya)^2 = " + yB_A2);
-		//Log.i("Bako", "(Zb - Za)^2 = " + zB_A2);
-		
-		float xB_A_xA_C = xB_A * xA_C;
-		float yB_A_yA_C = yB_A * yA_C;
-		float zB_A_zA_C = zB_A * zA_C;
-		//Log.i("Bako", "(Xb - Xa)*(Xa - Xc) = " + xB_A_xA_C);
-		//Log.i("Bako", "(Yb - Ya)*(Ya - Yc) = " + yB_A_yA_C);
-		//Log.i("Bako", "(Zb - Za)*(Za - Zc) = " + zB_A_zA_C);
-		
-		float xA_C2 = xA_C * xA_C;
-		float yA_C2 = yA_C * yA_C;
-		float zA_C2 = zA_C * zA_C;
-		float r2 = r * r;
-		//Log.i("Bako", "(Xa - Xc)^2 = " + xA_C2);
-		//Log.i("Bako", "(Ya - Yc)^2 = " + yA_C2);
-		//Log.i("Bako", "(Za - Zc)^2 = " + zA_C2);
-		//Log.i("Bako", "r^2 = " + r2);
-		
-		
-		//Log.i("Bako", "Center: " + CE[0] + ", " + CE[1] + ", " + CE[2]);
-        //Log.i("Bako", "Radious: " + r);
-    	//Log.i("Bako", "P1: " + P1[0] + ", " + P1[1] + ", " + P1[2]);
-    	//Log.i("Bako", "P2: " + P2[0] + ", " + P2[1] + ", " + P2[2]);
-    	
-    	//Log.i("Bako", "a: " + a );
-    	//Log.i("Bako", "b: " + b );
-    	//Log.i("Bako", "c: " + c );
-    	//Log.i("Bako", "Ä: " + delta );
 		
 		if(delta < 0)
 			return null;
@@ -196,7 +154,6 @@ public class Annotation implements Parcelable {
 			ret[0] = P1[0] + (d * (P2[0] - P1[0]));
 			ret[1] = P1[1] + (d * (P2[1] - P1[1]));
 			ret[2] = P1[2] + (d * (P2[2] - P1[2]));
-			Log.i("Bako", "============= HIT ==============");
 			return ret;
 		} else {
 			float d1 = -b + ((float)Math.sqrt(delta)/(2*a));

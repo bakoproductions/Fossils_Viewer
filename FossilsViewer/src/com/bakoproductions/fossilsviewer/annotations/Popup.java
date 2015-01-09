@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.os.Bundle;
 import android.os.Message;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,12 +21,17 @@ import android.widget.Toast;
 import com.bakoproductions.fossilsviewer.R;
 
 public class Popup {
+	private final int heightOffest;
+	private final int popupWidth;
+	private final int popupHeight;
+	
 	private Context context;
 	private DialogResult listener;
 	private PopupWindow window;
 	private Annotation annotation;
+	private int[] location;
 	
-	private EditText annotationTitle;
+ 	private EditText annotationTitle;
 	private EditText annotationText;
 	
 	private ImageButton closeButton;
@@ -33,7 +40,8 @@ public class Popup {
 	private ImageButton resizeButton;
 	
 	private boolean editingMode = false;
-	private boolean maximizeMode = false;
+	private boolean resizingMode = false;
+	private boolean visible = false;
 	
 	public Popup(Context context, Message message, DialogResult listener) {
 		this.context = context;
@@ -42,6 +50,10 @@ public class Popup {
 		Activity parent = (Activity) context;
 		
 		LinearLayout parentLayout = (LinearLayout) parent.findViewById(R.id.popupHolder);
+		int[] init = new int[2];
+		parentLayout.getLocationInWindow(init);
+		heightOffest = init[1];
+		
 		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		View view =  inflater.inflate(R.layout.popup_layout, null);
 		
@@ -49,7 +61,10 @@ public class Popup {
 		annotationText = (EditText) view.findViewById(R.id.annotationDescription);
 		disableEditTexts();
 		
-		annotation = message.getData().getParcelable("annotation");
+		Bundle bundle = message.getData();
+		annotation = bundle.getParcelable("annotation");
+		location = bundle.getIntArray("location");
+		
 		annotationTitle.setText(annotation.getTitle());
 		annotationText.setText(annotation.getText());
 		
@@ -65,20 +80,60 @@ public class Popup {
 		resizeButton = (ImageButton) view.findViewById(R.id.actionResize);
 		resizeButton.setOnClickListener(new OnResizeListener());
 		
+		// set width and height to minimum in dp
+		final float scale = context.getResources().getDisplayMetrics().density;
+		popupWidth = (int) (200 * scale + 0.5f);
+		popupHeight = (int) (125 * scale + 0.5f);
+		
 		window = new PopupWindow(view, 
-	               LayoutParams.WRAP_CONTENT,  
-	               LayoutParams.WRAP_CONTENT,
+	               popupWidth,  
+	               popupHeight,
 	               false);
 		
-		window.showAtLocation(parentLayout, Gravity.CENTER, 0, 0);
+		window.setClippingEnabled(false);
+		window.showAtLocation(parentLayout, Gravity.NO_GRAVITY, location[0], heightOffest + location[1]);
+		visible = true;
 	}
 	
-	public void update(int x, int y) {
-		window.update(x, y, -1, -1);
+	public void update(String title, String description, int x, int y) {
+		if(editingMode) {
+			window.setClippingEnabled(true);
+			return;
+		}
+		
+		if(resizingMode)
+			window.setClippingEnabled(true);
+		else
+			window.setClippingEnabled(false);
+		
+		annotationTitle.setText(title);
+		annotationText.setText(description);
+		
+		window.update(x, heightOffest + y, -1, -1);
 	}
 	
 	public void update(int x, int y, int width, int height) {
-		window.update(x, y, width, height);
+		if(editingMode) {
+			window.setClippingEnabled(true);
+			return;
+		}
+		
+		if(resizingMode)
+			window.setClippingEnabled(true);
+		else
+			window.setClippingEnabled(false);
+		
+		window.update(x, heightOffest + y, width, height);
+	}
+	
+	public boolean isVisible() {
+		return visible;
+	}
+	
+	public void closePopup() {
+		window.dismiss();
+		visible = false;
+		listener.closeAnnotation();
 	}
 	
 	private void disableEditTexts() {
@@ -111,8 +166,7 @@ public class Popup {
 				builder.setPositiveButton(R.string.discard, new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
-						window.dismiss();
-						listener.closeAnnotation();
+						closePopup();
 					}
 				});
 				builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -122,8 +176,7 @@ public class Popup {
 				});
 				builder.create().show();
 			} else {
-				window.dismiss();
-				listener.closeAnnotation();
+				closePopup();
 			}
 		}
 	}
@@ -197,7 +250,19 @@ public class Popup {
 	private class OnResizeListener implements OnClickListener {
 		@Override
 		public void onClick(View v) {
-			// TODO Auto-generated method stub		
+			if(!resizingMode) {
+				resizingMode = true;
+				resizeButton.setImageResource(R.drawable.action_minimize_selector);
+				
+				window.setClippingEnabled(true);
+				window.update(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+			} else {
+				window.setClippingEnabled(false);
+				window.update(popupWidth, popupHeight);
+				
+				resizingMode = false;
+				resizeButton.setImageResource(R.drawable.action_maximize_selector);
+			}		
 		}
 	}
 	

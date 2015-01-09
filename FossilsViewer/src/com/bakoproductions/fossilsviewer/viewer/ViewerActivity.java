@@ -109,6 +109,17 @@ public class ViewerActivity extends SherlockActivity {
 	}
 	
 	@Override
+	public void onBackPressed() {
+		if(renderer == null)
+			super.onBackPressed();
+		
+		boolean consumed = renderer.onBackPressed();
+		
+		if(!consumed)
+			super.onBackPressed();
+	}
+	
+	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 		
