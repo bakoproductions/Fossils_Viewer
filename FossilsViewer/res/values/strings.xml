@@ -20,6 +20,8 @@
     <string name="action_unlock_translation">Unlock Translation</string>
     <string name="action_lock_translation">Lock Translation</string>
     <string name="action_ar">Show in real 3D space</string>
+    <string name="action_hide_annotations">Hide annotations</string>
+    <string name="action_show_annotations">Show annotations</string>
 
     <string name="toast_add_title">Please add a title</string>
     <string name="toast_add_description">Please add a description</string>

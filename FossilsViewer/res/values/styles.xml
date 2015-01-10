@@ -7,7 +7,14 @@
         <item name="android:actionBarStyle" tools:targetApi="11">@style/ActionBar</item>
 
 		<item name="android:listViewStyle">@style/ListViewSt</item>
+		
+		<item name="android:actionOverflowButtonStyle">@style/OverFlowTheme</item>
+    	<item name="actionOverflowButtonStyle">@style/OverFlowTheme</item>
     </style>
+    
+    <style name="OverFlowTheme" parent="@android:style/Widget.ActionButton.Overflow">
+    	<item name="android:src">@drawable/action_overflow_selector</item>
+	</style>
 	
     <!-- Action Bar Styles -->
     <style name="ActionBar" parent="Widget.Sherlock.ActionBar">

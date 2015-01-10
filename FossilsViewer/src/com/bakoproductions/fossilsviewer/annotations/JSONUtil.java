@@ -13,7 +13,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.os.Environment;
-import android.util.Log;
 
 public class JSONUtil {
 	private static final String DIRECTORY_NAME = "/FossilsViewer/";
@@ -154,8 +153,6 @@ public class JSONUtil {
 		File directory = new File(directoryName);
 		if(!directory.exists())
 			directory.mkdir();
-		
-		Log.i("Bako", directoryName + fileName);
 		
 		File file = new File(directoryName + fileName);
 		if(!file.exists()){

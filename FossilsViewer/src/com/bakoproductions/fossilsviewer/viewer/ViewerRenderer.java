@@ -1,11 +1,8 @@
 package com.bakoproductions.fossilsviewer.viewer;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -18,16 +15,12 @@ import android.opengl.Matrix;
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
-import android.view.Display;
-import android.view.WindowManager;
-import android.widget.SlidingDrawer;
 
 import com.bakoproductions.fossilsviewer.annotations.Annotation;
 import com.bakoproductions.fossilsviewer.annotations.Annotations;
 import com.bakoproductions.fossilsviewer.annotations.DialogResult;
 import com.bakoproductions.fossilsviewer.objects.BoundingSphere;
 import com.bakoproductions.fossilsviewer.objects.Light;
-import com.bakoproductions.fossilsviewer.objects.Line;
 import com.bakoproductions.fossilsviewer.objects.Model;
 import com.bakoproductions.fossilsviewer.objects.ModelPart;
 import com.bakoproductions.fossilsviewer.util.MathHelper;
@@ -43,16 +36,16 @@ public class ViewerRenderer implements Renderer, DialogResult {
 	private Model model;
 	private Model pushPin;
 	private Light light;
-	private Line line;
 	private Annotations annotations;
     
     private boolean lockedTranslation;
+    private boolean hiddenAnnotations;
     
     /* ====== Annotation popup ====== */
     private int displayedAnnotation = -1;
     
-    private static final int CLOSED_STAGE = 0;
-    private static final int OPENED_STAGE = 1;
+    public static final int CLOSED_STAGE = 0;
+    public static final int OPENED_STAGE = 1;
     private int displayedStage = CLOSED_STAGE;
     /* ============================== */
     
@@ -151,25 +144,27 @@ public class ViewerRenderer implements Renderer, DialogResult {
         light.position(new float[] {0.0f, 0.0f, diameter});      
         
         ArrayList<Annotation> annotationList = annotations.getAnnotations();
-        for(int i=0;i<annotationList.size();i++) {
-        	Annotation annotation = annotationList.get(i);
-        	
-        	float[] intersection = annotation.getIntersection();
-        	float[] positioningMatrix = new float[16];
-        	Matrix.setIdentityM(positioningMatrix, 0);
-        	pushPin.position(positioningMatrix, new float[]{-center[0], -center[1], -center[2]}, new float[]{rotX, rotY}, scaleFactor);
-        	
-        	float[] alignementMatrix = new float[16];
-        	Matrix.setIdentityM(alignementMatrix, 0);
-        	pushPin.alignToNormalManual(alignementMatrix, intersection, annotation.getNormal());
-        	float scaling = getPushPinSize(pushPin.getSphere().getDiameter(), model.getSphere().getDiameter());
-        	pushPin.scale(alignementMatrix, scaling);
-        	annotation.calculateSphere(alignementMatrix, scaling, pushPin.getSphere());
-        	
-        	Matrix.setIdentityM(modelMatrix, 0);
-        	Matrix.multiplyMM(modelMatrix, 0, positioningMatrix, 0, alignementMatrix, 0);
-            pushPin.draw(modelMatrix, viewMatrix, projectionMatrix, MVMatrix, MVPMatrix);
-            light.draw(pushPin.getLightPosUniform(), viewMatrix, projectionMatrix);
+        if(!hiddenAnnotations) {
+            for(int i=0;i<annotationList.size();i++) {
+            	Annotation annotation = annotationList.get(i);
+            	
+            	float[] intersection = annotation.getIntersection();
+            	float[] positioningMatrix = new float[16];
+            	Matrix.setIdentityM(positioningMatrix, 0);
+            	pushPin.position(positioningMatrix, new float[]{-center[0], -center[1], -center[2]}, new float[]{rotX, rotY}, scaleFactor);
+            	
+            	float[] alignementMatrix = new float[16];
+            	Matrix.setIdentityM(alignementMatrix, 0);
+            	pushPin.alignToNormalManual(alignementMatrix, intersection, annotation.getNormal());
+            	float scaling = getPushPinSize(pushPin.getSphere().getDiameter(), model.getSphere().getDiameter());
+            	pushPin.scale(alignementMatrix, scaling);
+            	annotation.calculateSphere(alignementMatrix, scaling, pushPin.getSphere());
+            	
+            	Matrix.setIdentityM(modelMatrix, 0);
+            	Matrix.multiplyMM(modelMatrix, 0, positioningMatrix, 0, alignementMatrix, 0);
+                pushPin.draw(modelMatrix, viewMatrix, projectionMatrix, MVMatrix, MVPMatrix);
+                light.draw(pushPin.getLightPosUniform(), viewMatrix, projectionMatrix);
+            }
         }
         
         light.position(new float[] {0.0f, 0.0f, diameter});
@@ -212,7 +207,8 @@ public class ViewerRenderer implements Renderer, DialogResult {
 	        userRequestedAnnotation = false;
         }
         
-        if(userRequestedPopup) {
+        
+        if(!hiddenAnnotations && userRequestedPopup) {
         	float[] P1 = new float[3];
         	float[] P2 = new float[3];
         	createRay(P1, P2);        	
@@ -240,7 +236,7 @@ public class ViewerRenderer implements Renderer, DialogResult {
         	userRequestedPopup = false;
         }
         
-        if(displayedAnnotation != -1) {
+        if(!hiddenAnnotations && displayedAnnotation != -1) {
         	if(displayedStage == CLOSED_STAGE) {
         		Annotation annotation = annotationList.get(displayedAnnotation);
             	int[] point = get2dPoint(annotation.getIntersection(), viewport[2], viewport[3]);
@@ -276,21 +272,33 @@ public class ViewerRenderer implements Renderer, DialogResult {
         		message.setData(bundle);
         		dialogHanlder.sendMessage(message);
         	}
-        }
+        }  
 	}
 	
+	/*
+	 * My methods for responding to system events
+	 */
 	public boolean onBackPressed() {
 		if(displayedStage == OPENED_STAGE) {
 			if(dialogHanlder != null) {
 				Message message = new Message();
-        		message.what = DialogHandler.CLOSE_ANNOTATION_FROM_RENDERER;
-        		dialogHanlder.sendMessage(message);
+				message.what = DialogHandler.CLOSE_ANNOTATION_FROM_RENDERER;
+				dialogHanlder.sendMessage(message);
+				
 				return true;
 			} else
 				return false;			
 		} else
 			return false;
 	}
+	
+/*	public void onPause() {
+		if(displayedStage == OPENED_STAGE) {
+			Message message = new Message();
+			message.what = DialogHandler.PAUSE_ANNOTATION;
+			dialogHanlder.sendMessage(message);
+		}
+	}*/
 	
 	public void setHandler(DialogHandler dialogHandler) {
 		this.dialogHanlder = dialogHandler;
@@ -310,6 +318,14 @@ public class ViewerRenderer implements Renderer, DialogResult {
 	
 	public boolean isLockedTranslation() {
 		return lockedTranslation;
+	}
+	
+	public void setHiddenAnnotations(boolean hiddenAnnotations) {
+		this.hiddenAnnotations = hiddenAnnotations;
+	}
+	
+	public boolean isHiddenAnnotations() {
+		return hiddenAnnotations;
 	}
 	
 	public void centerModel() {
@@ -383,6 +399,10 @@ public class ViewerRenderer implements Renderer, DialogResult {
 	
 	public int getDisplayedAnnotation() {
 		return displayedAnnotation;
+	}
+	
+	public int getDisplayedStage() {
+		return displayedStage;
 	}
 	
 	public void setDisplayedAnnotation(int displayedAnnotation) {
@@ -503,14 +523,6 @@ public class ViewerRenderer implements Renderer, DialogResult {
 		test = MathHelper.crossProduct(normal, MathHelper.sub(v1, v3));
 		if(MathHelper.dot(test, MathHelper.sub(intersectPos, v1)) < 0.0f)
 			return false;
-		
-		/*// trying to find an angle
-		float[] u = MathHelper.sub(intersectPos, P1);
-		
-		float arithm = Math.abs(normal[0] * u[0] + normal[1] * u[1] + normal[2] * u[2]);
-		float paran = MathHelper.length(normal) * MathHelper.length(u);
-		
-		double angle = Math.asin(arithm/paran);*/
 		
 		hit[0] = intersectPos[0];
 		hit[1] = intersectPos[1];

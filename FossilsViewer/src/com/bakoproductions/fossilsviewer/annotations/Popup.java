@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Message;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -128,6 +127,11 @@ public class Popup {
 	
 	public boolean isVisible() {
 		return visible;
+	}
+	
+	public void pausePopup() {
+		window.dismiss();
+		visible = false;
 	}
 	
 	public void closePopup() {

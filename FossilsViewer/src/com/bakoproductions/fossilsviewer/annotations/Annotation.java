@@ -1,12 +1,11 @@
 package com.bakoproductions.fossilsviewer.annotations;
 
-import com.bakoproductions.fossilsviewer.objects.BoundingSphere;
-import com.bakoproductions.fossilsviewer.util.MathHelper;
-
 import android.opengl.Matrix;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
+
+import com.bakoproductions.fossilsviewer.objects.BoundingSphere;
+import com.bakoproductions.fossilsviewer.util.MathHelper;
 
 public class Annotation implements Parcelable {
 	private int id;

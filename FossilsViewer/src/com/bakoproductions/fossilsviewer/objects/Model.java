@@ -3,7 +3,6 @@ package com.bakoproductions.fossilsviewer.objects;
 import static com.bakoproductions.fossilsviewer.util.Globals.BYTES_PER_FLOAT;
 import static com.bakoproductions.fossilsviewer.util.Globals.THREE_DIM_ATTRS;
 
-import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -20,17 +19,12 @@ import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.renderscript.Matrix2f;
-import android.renderscript.Matrix4f;
-import android.util.Log;
 
 import com.bakoproductions.fossilsviewer.R;
-import com.bakoproductions.fossilsviewer.annotations.Annotation;
 import com.bakoproductions.fossilsviewer.shaders.ShadersUtil;
 import com.bakoproductions.fossilsviewer.util.Globals;
 import com.bakoproductions.fossilsviewer.util.MathHelper;
 import com.bakoproductions.fossilsviewer.util.Util;
-import com.bakoproductions.fossilsviewer.viewer.ViewerRenderer;
 
 public class Model implements Parcelable{
 	private Context context;
@@ -525,12 +519,6 @@ public class Model implements Parcelable{
 	public FloatBuffer getColorBuffer() {
 		colorBuffer.position(0);
 		return colorBuffer;
-	}
-	
-	public void printVertexBuffer() {
-		for(int i=0;i<vertexBuffer.capacity();i++) {
-			Log.i(Model.class.getSimpleName(), "" + vertexBuffer.get(i));
-		}
 	}
 	
 	public static final Parcelable.Creator<Model> CREATOR = new Parcelable.Creator<Model>() {

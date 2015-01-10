@@ -108,6 +108,8 @@ public class ViewerActivity extends SherlockActivity {
 			glSurfaceView.onResume();
 	}
 	
+	
+	
 	@Override
 	public void onBackPressed() {
 		if(renderer == null)
@@ -158,11 +160,15 @@ public class ViewerActivity extends SherlockActivity {
 		MenuItem actionUnlockTranslation = menu.findItem(R.id.action_unlock_translation);
 		MenuItem actionLockTranslation = menu.findItem(R.id.action_lock_translation);
 		MenuItem actionOpenAr = menu.findItem(R.id.action_ar);
+		MenuItem actionHideAnnotations = menu.findItem(R.id.action_hide_annotations);
+		MenuItem actionShowAnnotations = menu.findItem(R.id.action_show_annotations);
 		
 		actionCenter.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 		actionUnlockTranslation.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 		actionLockTranslation.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 		actionOpenAr.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		actionHideAnnotations.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+		actionShowAnnotations.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
 		
 		if(renderer.isLockedTranslation()) {
 			actionUnlockTranslation.setVisible(true);
@@ -170,6 +176,14 @@ public class ViewerActivity extends SherlockActivity {
 		} else {
 			actionUnlockTranslation.setVisible(false);
 			actionLockTranslation.setVisible(true);
+		}
+		
+		if(renderer.isHiddenAnnotations()) {
+			actionShowAnnotations.setVisible(true);
+			actionHideAnnotations.setVisible(false);
+		} else {
+			actionShowAnnotations.setVisible(false);
+			actionHideAnnotations.setVisible(true);
 		}
 		
 		return true;
@@ -198,6 +212,14 @@ public class ViewerActivity extends SherlockActivity {
 			intent.putExtra("file", renderer.getFilePath());
 			
 			startActivity(intent);
+			supportInvalidateOptionsMenu();
+			break;
+		case R.id.action_hide_annotations:
+			renderer.setHiddenAnnotations(true);
+			supportInvalidateOptionsMenu();
+			break;
+		case R.id.action_show_annotations:
+			renderer.setHiddenAnnotations(false);
 			supportInvalidateOptionsMenu();
 			break;
 		default:

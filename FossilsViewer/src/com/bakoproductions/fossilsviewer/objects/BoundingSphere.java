@@ -2,7 +2,6 @@ package com.bakoproductions.fossilsviewer.objects;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 
 
 public class BoundingSphere implements Parcelable{
@@ -56,9 +55,5 @@ public class BoundingSphere implements Parcelable{
 	public void writeToParcel(Parcel dest, int flags) {
 		dest.writeFloatArray(center);
 		dest.writeFloat(diameter);
-	}
-	
-	public void printSphereData() {
-		Log.i(BoundingSphere.class.getSimpleName(), "Center " + center[0] + ", " + center[1] + ", " + center[2] + " Diameter " + diameter);
 	}
 }

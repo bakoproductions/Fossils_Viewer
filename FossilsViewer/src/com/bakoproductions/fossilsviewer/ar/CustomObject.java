@@ -2,9 +2,6 @@ package com.bakoproductions.fossilsviewer.ar;
 
 import javax.microedition.khronos.opengles.GL10;
 
-import android.util.Log;
-
-import com.bakoproductions.fossilsviewer.objects.Ground;
 import com.bakoproductions.fossilsviewer.objects.Model;
 
 import edu.dhbw.andar.ARObject;

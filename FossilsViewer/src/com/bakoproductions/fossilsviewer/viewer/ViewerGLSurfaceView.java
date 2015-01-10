@@ -1,7 +1,6 @@
 package com.bakoproductions.fossilsviewer.viewer;
 
 import android.content.Context;
-import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
@@ -32,7 +31,7 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 	public ViewerGLSurfaceView(Context context) {
 		super(context);
 		this.context = context;
-	    
+		
 		clickDetector = new ClickDetector(new ClickListener(), new LongPressListener());
 		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 		translationDetector = new TranslationDetector(new TranslationListener());
@@ -48,16 +47,6 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 		scaleDetector = new ScaleGestureDetector(context, new ScaleListener());
 		translationDetector = new TranslationDetector(new TranslationListener());
 		rotationDetector = new RotationDetector(new RotationListener());
-	}
-
-	@Override
-	public void onPause(){
-	    super.onPause();
-	}
-
-	@Override
-	public void onResume(){
-	    super.onResume();
 	}
 
 	public void start(ViewerRenderer renderer) {
@@ -188,8 +177,9 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 		public static final int REMOVE_ANNOTATION = 1;
 		public static final int OPEN_ANNOTATION = 2;
 		public static final int MOVE_ANNOTATION = 3;
-		public static final int CLOSE_ANNOTATION_FROM_RENDERER = 4;
-		public static final int NO_HIT = 5;
+		public static final int CLOSE_ANNOTATION_FROM_RENDERER = 4;		// In case that the user clicked back button
+		public static final int PAUSE_ANNOTATION = 5;
+		public static final int NO_HIT = 6;
 		
 		private Popup popup;
 		
@@ -210,6 +200,8 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 				popup.update(title, description, location[0], location[1]);
 			} else if(msg.what == CLOSE_ANNOTATION_FROM_RENDERER) {
 				popup.closePopup();
+			} else if(msg.what == PAUSE_ANNOTATION) {
+				popup.pausePopup();
 			} else if (msg.what == NO_HIT) {
 				Toast.makeText(context, R.string.toast_try_long_click_on_object, Toast.LENGTH_SHORT).show();
 			}

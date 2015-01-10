@@ -13,12 +13,9 @@ import android.widget.Button;
 import com.bakoproductions.fossilsviewer.R;
 
 public class DeleteAnnotationDialog {
-	private DialogResult listener;
 	private AlertDialog alert;
 	
-	public DeleteAnnotationDialog(Context context, Message message, DialogResult listener) {
-		this.listener = listener;
-		
+	public DeleteAnnotationDialog(Context context, Message message, DialogResult listener) {		
 		Builder builder = new Builder(context);
 		builder.setTitle(R.string.remove_annotation);
 		builder.setMessage(R.string.are_you_sure);

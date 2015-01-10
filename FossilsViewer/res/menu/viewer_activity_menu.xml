@@ -26,5 +26,15 @@
         android:icon="@drawable/action_ar_selector"
         android:orderInCategory="102"
         android:title="@string/action_ar"  />
+    
+    <item
+        android:id="@+id/action_hide_annotations"
+        android:orderInCategory="103"
+        android:title="@string/action_hide_annotations"  />
+    
+    <item
+        android:id="@+id/action_show_annotations"
+        android:orderInCategory="103"
+        android:title="@string/action_show_annotations"  />
 
 </menu>
