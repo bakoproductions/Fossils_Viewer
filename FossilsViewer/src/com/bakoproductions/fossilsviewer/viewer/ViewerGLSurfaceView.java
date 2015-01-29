@@ -22,6 +22,7 @@ import com.bakoproductions.fossilsviewer.gestures.TranslationDetector;
 public class ViewerGLSurfaceView extends GLSurfaceView {
 	private Context context;
 	private ViewerRenderer renderer;
+	private Popup popup;
 	
 	private ClickDetector clickDetector;
 	private ScaleGestureDetector scaleDetector;
@@ -54,6 +55,14 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 		
 		setEGLContextClientVersion(2);
 		setRenderer(renderer);
+	}
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		
+		if(popup != null)
+			popup.pausePopup();
 	}
 	
 	public DialogHandler getDialogHandler() {
@@ -181,8 +190,6 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 		public static final int PAUSE_ANNOTATION = 5;
 		public static final int NO_HIT = 6;
 		
-		private Popup popup;
-		
 		@Override
 		public void handleMessage(Message msg) {
 			if(msg.what == ADD_ANNOTATION) {
@@ -193,11 +200,12 @@ public class ViewerGLSurfaceView extends GLSurfaceView {
 				popup = new Popup(context, msg, renderer);	
 			} else if (msg.what == MOVE_ANNOTATION) {
 				Bundle data = msg.getData();
+				int id = data.getInt("id");
 				String title = data.getString("title");
 				String description = data.getString("description");
 				
 				int[] location = msg.getData().getIntArray("location");
-				popup.update(title, description, location[0], location[1]);
+				popup.update(id, title, description, location[0], location[1]);
 			} else if(msg.what == CLOSE_ANNOTATION_FROM_RENDERER) {
 				popup.closePopup();
 			} else if(msg.what == PAUSE_ANNOTATION) {
