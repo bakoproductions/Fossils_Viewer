@@ -30,6 +30,7 @@ public class Popup {
 	private Annotation annotation;
 	private int[] location;
 	
+	private int annotationId;
  	private EditText annotationTitle;
 	private EditText annotationText;
 	
@@ -62,6 +63,7 @@ public class Popup {
 		
 		Bundle bundle = message.getData();
 		annotation = bundle.getParcelable("annotation");
+		annotationId = annotation.getId();
 		location = bundle.getIntArray("location");
 		
 		annotationTitle.setText(annotation.getTitle());
@@ -94,7 +96,9 @@ public class Popup {
 		visible = true;
 	}
 	
-	public void update(String title, String description, int x, int y) {
+	public void update(int id, String title, String description, int x, int y) {
+		annotationId = id;
+		
 		if(editingMode) {
 			window.setClippingEnabled(true);
 			return;
@@ -111,7 +115,9 @@ public class Popup {
 		window.update(x, heightOffest + y, -1, -1);
 	}
 	
-	public void update(int x, int y, int width, int height) {
+	public void update(int id, int x, int y, int width, int height) {
+		annotationId = id;
+		
 		if(editingMode) {
 			window.setClippingEnabled(true);
 			return;
@@ -195,7 +201,7 @@ public class Popup {
 			builder.setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					listener.deleteAnnotation(annotation.getId());
+					listener.deleteAnnotation(annotationId);
 					window.dismiss();
 					listener.closeAnnotation();
 				}
@@ -236,7 +242,7 @@ public class Popup {
 					return;
 				}
 				
-				listener.editAnnotation(annotation.getId(), title, description);
+				listener.editAnnotation(annotationId, title, description);
 				
 				window.setFocusable(false);
 				window.update();

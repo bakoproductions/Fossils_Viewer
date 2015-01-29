@@ -266,6 +266,7 @@ public class ViewerRenderer implements Renderer, DialogResult {
         		message.what = DialogHandler.MOVE_ANNOTATION;
         		
         		Bundle bundle = new Bundle();
+        		bundle.putInt("id", annotation.getId());
         		bundle.putString("title", annotation.getTitle());
         		bundle.putString("description", annotation.getText());
         		bundle.putIntArray("location", point);

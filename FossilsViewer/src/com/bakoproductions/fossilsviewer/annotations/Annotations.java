@@ -24,7 +24,13 @@ public class Annotations {
 	}
 	
 	public void add(Context context, Annotation annotation) {
-		annotation.setId(annotations.size());
+		int maxId = -1;
+		for(Annotation ann: annotations) {
+			int id = ann.getId();
+			if(id > maxId)
+				maxId =  id;
+		}
+		annotation.setId(maxId + 1);
 		annotations.add(annotation);
 		
 		boolean added = JSONUtil.writeJSONData(fileName, annotations);
@@ -34,13 +40,17 @@ public class Annotations {
 	}
 	
 	public void edit(Context context, int id, String title, String text) {
-		Annotation annotation = annotations.get(id);
-		annotation.setTitle(title);
-		annotation.setText(text);
-		
-		boolean edited = JSONUtil.writeJSONData(fileName, annotations);
-		if(!edited)
-			Toast.makeText(context, R.string.toast_error_in_saving, Toast.LENGTH_SHORT).show();
+		for(Annotation annotation: annotations) {
+			if(annotation.getId() == id) {
+				annotation.setTitle(title);
+				annotation.setText(text);
+				
+				boolean edited = JSONUtil.writeJSONData(fileName, annotations);
+				if(!edited)
+					Toast.makeText(context, R.string.toast_error_in_saving, Toast.LENGTH_SHORT).show();
+				break;
+			}
+		}		
 	}
 	
 	public void remove(Context context, int id) {
