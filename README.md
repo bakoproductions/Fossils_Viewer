@@ -1,4 +1,4 @@
-# Fossils Viewer
+# [Fossils Viewer](http://www.dmod.eu/fossilsviewer/index.html)
 This repository includes my graduate thesis around the field of Augmented Reality on Android devices.
 
 The purpose of this application is to display a 3D fossil object in a friendly 3D environment, allowing the user to interact with it by taking advantage of the multiple gestures' detection.
